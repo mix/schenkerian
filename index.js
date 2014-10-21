@@ -43,7 +43,7 @@ module.exports = function (options) {
       function (pr, next) {
         var pagerankOption = pr
         pr = pr || 0
-        if (options.body) return next(null, pr, analyze(body, pr, url))
+        if (options.body) return next(null, pr, analyze(options.body, pr, url))
         request.get(url, function (err, res, body) {
           if (err || res.statusCode != '200') return next(new Error('Webpage could not resolve'))
           next(null, pr, analyze(body, pr || 1, url))
@@ -59,7 +59,7 @@ module.exports = function (options) {
 
 function analyze(body, pr, originalUrl) {
   var multiplier = (pr == 10 ? 2 : Number('1.' + pr)) - .5
-  var meta = body.replace(RE_HTML_JUNK, ' ').match(RE_META_TAGS)
+  var meta = body.replace(RE_HTML_JUNK, ' ').match(RE_META_TAGS) || []
   var title = body.match(RE_TITLE_TAG)
   var things = {}
   meta.forEach(function (m) {
