@@ -1,5 +1,5 @@
 var v = require('valentine')
-var pagerank = require('./pagerank')
+var pagerank = require('./pr')
 var URL = require('url')
 var util = require('util')
 var commonWords = {}
@@ -18,13 +18,13 @@ var request = require('request').defaults({
   maxRedirects: 12,
   timeout: 3000,
   'headers': {
-    'user-agent': 'Mixbot/1.0 (+https://www.mix.org)'
+    'user-agent': 'Schenkerianbot/1.0 (+https://github.com/openlikes/schenkerian)'
   }
 })
 
 var contentRe = /content=(['"])([^\1]+?)(\1)/
 
-var commonWordsArray = require('yamljs').load('config/common-words.yaml').words
+var commonWordsArray = require('yamljs').load('./common-words.yaml').words
 
 commonWordsArray.forEach(function (w) {
   commonWords[w] = 1
