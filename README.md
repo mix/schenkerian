@@ -25,6 +25,7 @@ analyze({
 })
 ```
 
+### output
 ``` json
 {
 "pagerank": 5,
