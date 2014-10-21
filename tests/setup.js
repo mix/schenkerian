@@ -1,7 +1,6 @@
 var chai = require('chai')
   , sinonChai = require('sinon-chai')
   , promised = require('chai-as-promised')
-  , v = require('valentine')
 
 global.expect = chai.expect
 global.noop = function () {
