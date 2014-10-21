@@ -15,10 +15,15 @@
   "author": "Dustin Diaz",
   "license": "MIT",
   "dependencies": {
+    "chai": "^1.9.2",
+    "chai-as-promised": "^4.1.1",
     "gramophone": "0.0.3",
     "mocha": "^1.21.5",
     "pagerank": "^1.2.0",
     "request": "^2.45.0",
+    "sinon": "^1.10.3",
+    "sinon-chai": "^2.6.0",
+    "valentine": "^2.1.3",
     "when": "^3.5.0",
     "yamljs": "^0.2.0"
   }
