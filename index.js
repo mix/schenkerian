@@ -24,7 +24,7 @@ var request = require('request').defaults({
 
 var contentRe = /content=(['"])([^\1]+?)(\1)/
 
-var commonWordsArray = require('yamljs').load('./common-words.yaml').words
+var commonWordsArray = require('yamljs').load(__dirname + '/common-words.yaml').words
 
 commonWordsArray.forEach(function (w) {
   commonWords[w] = 1
