@@ -15,6 +15,10 @@
   "author": "Dustin Diaz",
   "license": "MIT",
   "dependencies": {
-    "pagerank": "^1.2.0"
+    "gramophone": "0.0.3",
+    "pagerank": "^1.2.0",
+    "request": "^2.45.0",
+    "when": "^3.5.0",
+    "yamljs": "^0.2.0"
   }
 }
