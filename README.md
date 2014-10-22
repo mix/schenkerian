@@ -13,7 +13,7 @@ $ npm install schenkerian --save
 ### Usage
 
 ``` js
-var analzye = require('schenkerian')
+var analyze = require('schenkerian')
 
 analyze({
   url: 'http://dustindiaz.com',
