@@ -41,23 +41,22 @@ module.exports = function (options) {
         pagerank.get(host, next)
       },
       function (pr, next) {
-        var pagerankOption = pr
         pr = pr || 0
-        if (options.body) return next(null, pr, analyze(options.body, pr, url))
+        if (options.body) return next(null, pr, analyze(options.body, pr))
         request.get(url, function (err, res, body) {
           if (err || res.statusCode != '200') return next(new Error('Webpage could not resolve'))
           next(null, pr, analyze(body, pr || 1, url))
         })
       },
-      function (err, pagerank, analized) {
+      function (err, pagerank, analyzed) {
         if (err) return reject(err)
-        resolve(v.extend({ pagerank: pagerank }, analized))
+        resolve(v.extend({ pagerank: pagerank }, analyzed))
       }
     )
   })
 }
 
-function analyze(body, pr, originalUrl) {
+function analyze(body, pr) {
   var multiplier = (pr == 10 ? 2 : Number('1.' + pr)) - .5
   var meta = body.replace(RE_HTML_JUNK, ' ').match(RE_META_TAGS) || []
   var title = body.match(RE_TITLE_TAG)
