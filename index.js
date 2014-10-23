@@ -1,4 +1,4 @@
-var v = require('valentine')
+var lodash = require('lodash')
 var pagerank = require('./pr')
 var URL = require('url')
 var util = require('util')
@@ -50,10 +50,10 @@ function getPageRank(url, prOption) {
 
 function sendToAnalyze (url, bodyOption, pr) {
   return when.promise(function (resolve, reject) {
-    if (bodyOption) return resolve(v.extend({pagerank: pr}, analyze(bodyOption, pr)))
+    if (bodyOption) return resolve(lodash.extend({pagerank: pr}, analyze(bodyOption, pr)))
     request.get(url, function (err, res, body) {
       if (err || res.statusCode != '200') return reject(new Error('Webpage could not resolve'))
-      resolve(v.extend({pagerank: pr}, analyze(body, pr)))
+      resolve(lodash.extend({pagerank: pr}, analyze(body, pr)))
     })
   })
 }
@@ -73,7 +73,7 @@ function analyze(body, pr) {
   })
 
   // give weight to titles
-  v(things.title.replace(RE_SPACES, ' ').split(' ')).uniq().forEach(function (word, i, ar) {
+  lodash.uniq(things.title.replace(RE_SPACES, ' ').split(' ')).forEach(function (word, i, ar) {
     word = word.toLowerCase().trim()
     var n = Math.max(1, 7 - i)
     map[word] = map[word] || 0
@@ -145,7 +145,7 @@ function cleanBody(body) {
 }
 
 function compileKeywords(graph, map) {
-  return v(graph).map(function (item) {
+  return lodash.map(graph, function (item) {
     return {
       word: item.term,
       count: item.tf + (map[item.term] ? map[item.term] : 0)
