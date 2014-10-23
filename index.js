@@ -36,16 +36,15 @@ module.exports = function (options) {
   return when.promise(function (resolve, reject) {
     v.waterfall(
       function (next) {
-        if (options.pagerank === false) return next(null, false)
+        if (options.pagerank === false) return next(null, 0)
         var host = URL.parse(url).host
         pagerank.get(host, next)
       },
       function (pr, next) {
-        pr = pr || 0
         if (options.body) return next(null, pr, analyze(options.body, pr))
         request.get(url, function (err, res, body) {
           if (err || res.statusCode != '200') return next(new Error('Webpage could not resolve'))
-          next(null, pr, analyze(body, pr || 1, url))
+          next(null, pr, analyze(body, pr))
         })
       },
       function (err, pagerank, analyzed) {
@@ -57,59 +56,14 @@ module.exports = function (options) {
 }
 
 function analyze(body, pr) {
-  var multiplier = (pr == 10 ? 2 : Number('1.' + pr)) - .5
-  var meta = body.replace(RE_HTML_JUNK, ' ').match(RE_META_TAGS) || []
-  var title = body.match(RE_TITLE_TAG)
-  var things = {}
-  meta.forEach(function (m) {
-    var part
-    if (m.match('og:title')) {
-      part = m.match(contentRe)
-      if (part && part[2]) things.title = part[2]
-    }
-    if (!things.title) {
-      if (m.match('twitter:title') ||
-          m.match(/name=['"]?title['"]?/)) {
-        part = m.match(contentRe)
-        if (part && part[2]) things.title = part[2]
-      }
-    }
-
-    if (!things.image) {
-      if (m.match('twitter:image:src') ||
-          m.match('og:image')) {
-        part = m.match(contentRe)
-        if (part && part[2]) things.image = part[2]
-      }
-    }
-  })
-
-  if (!things.title) {
-    things.title = title ? title[1] : 'Untitled'
-  }
-
+  pr = pr || 5
+  var things = gatherMetaTitle(body)
   var map = {}
-  var content = body
-    .replace(RE_HTML_JUNK, ' ')
-    .replace(RE_HTML, ' ')
-    .replace(RE_HTML_ENTITIES, ' ')
-    .replace(RE_HTML_COMMENTS, ' ')
-    .replace(RE_NEWLINES, '\n')
-    .replace(RE_SPACES, ' ')
-
-
-  content = content.split(' ').map(function (word) {
-    return word.toLowerCase().replace(/[\d'"”<>\/]/g, ' ').trim()
-  })
-  .filter(function commonWordFilter(word) {
-    return !commonWords[word]
-  })
-  .join(' ')
-
-  var splitContent = content.split(' ')
+  var content = cleanBody(body)
 
   var graph = gramophone.extract(content, { score: true, stopWords: commonWordsArray })
 
+  var splitContent = content.split(' ')
   splitContent.forEach(function (word) {
     map[word] = map[word] || 0
     map[word]++
@@ -123,7 +77,72 @@ function analyze(body, pr) {
     map[word] = map[word] + n
   })
 
-  var keywords = v(graph).map(function (item) {
+  var totalWords = splitContent.length
+  var keywords = compileKeywords(graph, map).splice(0, 30)
+  var multiplier = (pr == 10 ? 2 : Number('1.' + pr)) - .5
+  keywords = keywordsAndScores(keywords, totalWords, multiplier)
+
+  return {
+    totalWords: totalWords,
+    title: things.title,
+    image: things.image,
+    relevance: keywords
+  }
+}
+
+function gatherMetaTitle(body) {
+  var things = {}
+  var meta = body.replace(RE_HTML_JUNK, ' ').match(RE_META_TAGS) || []
+  meta.forEach(function (m) {
+    var part
+    if (m.match('og:title')) {
+      part = m.match(contentRe)
+      if (part && part[2]) things.title = part[2]
+    }
+    if (!things.title) {
+      if (m.match('twitter:title') ||
+        m.match(/name=['"]?title['"]?/)) {
+        part = m.match(contentRe)
+        if (part && part[2]) things.title = part[2]
+      }
+    }
+
+    if (!things.image) {
+      if (m.match('twitter:image:src') ||
+        m.match('og:image')) {
+        part = m.match(contentRe)
+        if (part && part[2]) things.image = part[2]
+      }
+    }
+  })
+
+  if (!things.title) {
+    var title = body.match(RE_TITLE_TAG)
+    things.title = title ? title[1] : 'Untitled'
+  }
+  return things
+}
+
+function cleanBody(body) {
+  var content = body
+    .replace(RE_HTML_JUNK, ' ')
+    .replace(RE_HTML, ' ')
+    .replace(RE_HTML_ENTITIES, ' ')
+    .replace(RE_HTML_COMMENTS, ' ')
+    .replace(RE_NEWLINES, '\n')
+    .replace(RE_SPACES, ' ')
+
+  return content.split(' ').map(function (word) {
+    return word.toLowerCase().replace(/[\d'"”<>\/]/g, ' ').trim()
+  })
+  .filter(function commonWordFilter(word) {
+    return !commonWords[word]
+  })
+  .join(' ')
+}
+
+function compileKeywords(graph, map) {
+  return v(graph).map(function (item) {
     return {
       word: item.term,
       count: item.tf
@@ -141,10 +160,10 @@ function analyze(body, pr) {
   .filter(function nonNumberFilter(item) {
     return !item.word.match(/^\d+$/)
   })
+}
 
-  var totalWords = splitContent.length
-  keywords = keywords.splice(0, 30)
-  .map(function (el, i, ar) {
+function keywordsAndScores(keywords, totalWords, multiplier) {
+  return keywords.map(function (el, i, ar) {
     var first = ar[0].count
     var phraseLen = Math.max(1, el.word.split(' ').length * .68)
     var score = (((el.count / first) + (el.count / totalWords)) * multiplier) * phraseLen
@@ -157,12 +176,4 @@ function analyze(body, pr) {
   .sort(function (a, b) {
     return b.score - a.score
   })
-
-  var data = {
-    totalWords: totalWords,
-    title: things.title,
-    image: things.image,
-    relevance: keywords
-  }
-  return data
 }
