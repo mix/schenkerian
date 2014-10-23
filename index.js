@@ -14,6 +14,7 @@ var RE_NEWLINES = /\n+/g
 var RE_SPACES = /\s+/g
 var RE_TITLE_TAG = /<title>([\s\S]+?)<\/title>/
 var RE_META_TAGS = /<meta ([\s\S]+?)\/?>/g
+var RE_ALPHA_NUM = /[^\w]/g
 var request = require('request').defaults({
   followAllRedirects: true,
   maxRedirects: 12,
@@ -132,11 +133,10 @@ function cleanBody(body) {
     .replace(RE_HTML_ENTITIES, ' ')
     .replace(RE_HTML_COMMENTS, ' ')
     .replace(RE_NEWLINES, '\n')
+    .replace(RE_ALPHA_NUM, ' ')
     .replace(RE_SPACES, ' ')
 
-  return content.split(' ').map(function (word) {
-    return word.toLowerCase().replace(/[\d'"”<>\/]/g, ' ').trim()
-  })
+  return content.split(' ')
   .filter(function commonWordFilter(word) {
     return !commonWords[word]
   })
@@ -148,20 +148,11 @@ function compileKeywords(graph, map) {
   return v(graph).map(function (item) {
     return {
       word: item.term,
-      count: item.tf
-    }
-  })
-  .map(function (item) {
-    return {
-      word: item.word,
-      count: item.count + (map[item.word] ? map[item.word] : 0)
+      count: item.tf + (map[item.term] ? map[item.term] : 0)
     }
   })
   .filter(function nonWordFilter(item) {
-    return !!item.word.match(/^\w[\w -]+$/i)
-  })
-  .filter(function nonNumberFilter(item) {
-    return !item.word.match(/^\d+$/)
+    return !(/^\w[\w -]+$/i).test(item.word) || !(/^\d+$/).test(item.word)
   })
 }
 
