@@ -5,8 +5,9 @@ var util = require('util')
 var commonWords = {}
 var gramophone = require('gramophone')
 var when = require('when')
+var pipeline = require('when/pipeline')
 var RE_HTML = /<\/?\!?\w[\s\S]*?>/g
-var RE_HTML_JUNK = /<(script|style|nav|footer|label|audio|video)[\s\S]*?>[\s\S]*?<\/\1>/g
+var RE_HTML_JUNK = /<\s*(script|style|nav|footer|label|audio|video)[\s\S]*?>[\s\S]*?<\/\1>/g
 var RE_HTML_COMMENTS = /<!--[\s\S]+?-->/g
 var RE_HTML_ENTITIES = /&[\w#]+;/g
 var RE_NEWLINES = /\n+/g
@@ -33,25 +34,26 @@ commonWordsArray.forEach(function (w) {
 module.exports = function (options) {
   var url = options.url
   options.pagerank = options.pagerank || false
+  return pipeline([
+    getPageRank.bind(null, url, options.pagerank),
+    sendToAnalyze.bind(null, url, options.body)
+  ])
+}
+function getPageRank(url, prOption) {
   return when.promise(function (resolve, reject) {
-    v.waterfall(
-      function (next) {
-        if (options.pagerank === false) return next(null, 0)
-        var host = URL.parse(url).host
-        pagerank.get(host, next)
-      },
-      function (pr, next) {
-        if (options.body) return next(null, pr, analyze(options.body, pr))
-        request.get(url, function (err, res, body) {
-          if (err || res.statusCode != '200') return next(new Error('Webpage could not resolve'))
-          next(null, pr, analyze(body, pr))
-        })
-      },
-      function (err, pagerank, analyzed) {
-        if (err) return reject(err)
-        resolve(v.extend({ pagerank: pagerank }, analyzed))
-      }
-    )
+    if (prOption === false) return resolve(0)
+    var host = URL.parse(url).host
+    pagerank.get(host, resolve)
+  })
+}
+
+function sendToAnalyze (url, bodyOption, pr) {
+  return when.promise(function (resolve, reject) {
+    if (bodyOption) return resolve(v.extend({pagerank: pr}, analyze(bodyOption, pr)))
+    request.get(url, function (err, res, body) {
+      if (err || res.statusCode != '200') return reject(new Error('Webpage could not resolve'))
+      resolve(v.extend({pagerank: pr}, analyze(body, pr)))
+    })
   })
 }
 
@@ -139,6 +141,7 @@ function cleanBody(body) {
     return !commonWords[word]
   })
   .join(' ')
+  .replace(RE_SPACES, ' ')
 }
 
 function compileKeywords(graph, map) {
