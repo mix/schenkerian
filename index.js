@@ -15,6 +15,7 @@ var RE_SPACES = /\s+/g
 var RE_TITLE_TAG = /<title>([\s\S]+?)<\/title>/
 var RE_META_TAGS = /<meta ([\s\S]+?)\/?>/g
 var RE_ALPHA_NUM = /[^\w]/g
+var contentRe = /content=(['"])([^\1]+?)(\1)/
 var request = require('request').defaults({
   followAllRedirects: true,
   maxRedirects: 12,
@@ -24,15 +25,14 @@ var request = require('request').defaults({
   }
 })
 
-var contentRe = /content=(['"])([^\1]+?)(\1)/
 
 var commonWordsArray = require('yamljs').load(__dirname + '/common-words.yaml').words
 
-commonWordsArray.forEach(function (w) {
+commonWordsArray.forEach(function commonWordAdd(w) {
   commonWords[w] = 1
 })
 
-module.exports = function (options) {
+module.exports = function _export(options) {
   var url = options.url
   options.pagerank = options.pagerank || false
   return pipeline([
@@ -41,7 +41,7 @@ module.exports = function (options) {
   ])
 }
 function getPageRank(url, prOption) {
-  return when.promise(function (resolve, reject) {
+  return when.promise(function promise(resolve, reject) {
     if (prOption === false) return resolve(0)
     var host = URL.parse(url).host
     pagerank.get(host, resolve)
@@ -49,9 +49,9 @@ function getPageRank(url, prOption) {
 }
 
 function sendToAnalyze (url, bodyOption, pr) {
-  return when.promise(function (resolve, reject) {
+  return when.promise(function promise(resolve, reject) {
     if (bodyOption) return resolve(lodash.extend({pagerank: pr}, analyze(bodyOption, pr)))
-    request.get(url, function (err, res, body) {
+    request.get(url, function reqCallback(err, res, body) {
       if (err || res.statusCode != '200') return reject(new Error('Webpage could not resolve'))
       resolve(lodash.extend({pagerank: pr}, analyze(body, pr)))
     })
@@ -67,7 +67,7 @@ function analyze(body, pr) {
   var graph = gramophone.extract(content, { score: true, stopWords: commonWordsArray })
 
   var splitContent = content.split(' ')
-  splitContent.forEach(function (word) {
+  splitContent.forEach(function wordCount(word) {
     map[word] = map[word] || 0
     map[word]++
   })
@@ -96,7 +96,7 @@ function analyze(body, pr) {
 function gatherMetaTitle(body) {
   var things = {}
   var meta = body.replace(RE_HTML_JUNK, ' ').match(RE_META_TAGS) || []
-  meta.forEach(function (m) {
+  meta.forEach(function metaTag(m) {
     var part
     if (m.match('og:title')) {
       part = m.match(contentRe)
@@ -136,10 +136,9 @@ function cleanBody(body) {
     .replace(RE_ALPHA_NUM, ' ')
     .replace(RE_SPACES, ' ')
 
-  content = content.split(' ').map(function (word) {
+  content = content.split(' ').map(function lowerCaseAndTrim(word) {
     return word.toLowerCase().replace(/[\d'"”<>\/]/g, ' ').trim()
   })
-
   .filter(function commonWordFilter(word) {
     return !commonWords[word]
   })
@@ -148,7 +147,7 @@ function cleanBody(body) {
 }
 
 function compileKeywords(graph, map) {
-  return lodash.map(graph, function (item) {
+  return lodash.map(graph, function graphMap(item) {
     return {
       word: item.term,
       count: item.tf + (map[item.term] ? map[item.term] : 0)
@@ -160,7 +159,7 @@ function compileKeywords(graph, map) {
 }
 
 function keywordsAndScores(keywords, totalWords, multiplier) {
-  return keywords.map(function (el, i, ar) {
+  return keywords.map(function getWordScores(el, i, ar) {
     var first = ar[0].count
     var phraseLen = Math.max(1, el.word.split(' ').length * .68)
     var score = (((el.count / first) + (el.count / totalWords)) * multiplier) * phraseLen
@@ -170,7 +169,7 @@ function keywordsAndScores(keywords, totalWords, multiplier) {
       count: el.count
     }
   })
-  .sort(function (a, b) {
+  .sort(function scoreSorter(a, b) {
     return b.score - a.score
   })
 }
