@@ -136,7 +136,10 @@ function cleanBody(body) {
     .replace(RE_ALPHA_NUM, ' ')
     .replace(RE_SPACES, ' ')
 
-  return content.split(' ')
+  content = content.split(' ').map(function (word) {
+    return word.toLowerCase().replace(/[\d'"”<>\/]/g, ' ').trim()
+  })
+
   .filter(function commonWordFilter(word) {
     return !commonWords[word]
   })
