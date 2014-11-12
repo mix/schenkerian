@@ -16,6 +16,7 @@ var RE_TITLE_TAG = /<title>([\s\S]+?)<\/title>/
 var RE_META_TAGS = /<meta ([\s\S]+?)\/?>/g
 var RE_ALPHA_NUM = /[^\w]/g
 var RE_BAD_TITLES = /&lt;\/?\w+?&gt;/g
+var RE_AMPS = /&amp;/g
 var contentRe = /content=(['"])([^\1]+?)(\1)/
 var request = require('request').defaults({
   followAllRedirects: true,
@@ -88,7 +89,7 @@ function analyze(body, pr) {
 
   return {
     totalWords: totalWords,
-    title: things.title.replace(RE_BAD_TITLES, ''),
+    title: things.title.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&'),
     image: things.image,
     relevance: keywords
   }
