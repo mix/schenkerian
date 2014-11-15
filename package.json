@@ -17,6 +17,7 @@
   "dependencies": {
     "chai": "^1.9.2",
     "chai-as-promised": "^4.1.1",
+    "cheerio": "^0.18.0",
     "gramophone": "0.0.3",
     "lodash": "^2.4.1",
     "mocha": "^1.21.5",
