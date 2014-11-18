@@ -4,6 +4,7 @@ var URL = require('url')
 var util = require('util')
 var commonWords = {}
 var gramophone = require('gramophone')
+var cheerio = require('cheerio')
 var when = require('when')
 var pipeline = require('when/pipeline')
 var RE_HTML = /<\/?\!?\w[\s\S]*?>/g
@@ -129,7 +130,13 @@ function gatherMetaTitle(body) {
 }
 
 function cleanBody(body) {
-  var content = body
+  var parsedBody = cheerio.load(body)
+  parsedBody('.footer').empty()
+  parsedBody('#footer').empty()
+  parsedBody('.nav').empty()
+  parsedBody('#nav').empty()
+
+  var content = parsedBody.html()
     .replace(RE_HTML_JUNK, ' ')
     .replace(RE_HTML, ' ')
     .replace(RE_HTML_ENTITIES, ' ')
