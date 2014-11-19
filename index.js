@@ -172,7 +172,7 @@ function cleanBody(body) {
         .replace(RE_SPACES, ' ')
       )
     })
-  })
+  }).timeout(1000, 'Timed out trying to get body element')
 }
 
 function compileKeywords(graph, map) {

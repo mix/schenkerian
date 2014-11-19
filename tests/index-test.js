@@ -35,4 +35,11 @@ describe('The analyzer', function () {
       done()
     })
   })
+
+  it('rejects no body element exists', function () {
+    return expect(subject({
+      url: 'http://dustindiaz.com',
+      body: '<html><title>something fun</title></html>'
+    })).to.be.rejectedWith('Timed out trying to get body element')
+  })
 })
