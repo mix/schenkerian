@@ -14,7 +14,7 @@ describe('The analyzer', function () {
   it('should work when given a body', function (done) {
     return subject({
       url: 'http://dustindiaz.com',
-      body: '<title>something fun</title>'
+      body: '<html><title>something fun</title></html>'
     })
     .then(function (response) {
       console.log(response)
