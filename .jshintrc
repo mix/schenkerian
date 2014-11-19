@@ -18,7 +18,6 @@
     , "before"
     , "after"
     , "noop"
-    , "Schemas"
   ]
   , "indent": 2
   , "maxdepth": 6
