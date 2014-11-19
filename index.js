@@ -1,7 +1,6 @@
 var lodash = require('lodash')
 var pagerank = require('./pr')
-var URL = require('url')
-var util = require('util')
+var Url = require('url')
 var commonWords = {}
 var gramophone = require('gramophone')
 var cheerio = require('cheerio')
@@ -46,7 +45,7 @@ module.exports = function _export(options) {
 function getPageRank(url, prOption) {
   return when.promise(function promise(resolve, reject) {
     if (prOption === false) return resolve(0)
-    var host = URL.parse(url).host
+    var host = Url.parse(url).host
     pagerank.get(host, resolve)
   })
 }
@@ -85,7 +84,7 @@ function analyze(body, pr) {
 
   var totalWords = splitContent.length
   var keywords = compileKeywords(graph, map).splice(0, 30)
-  var multiplier = (pr == 10 ? 2 : Number('1.' + pr)) - .5
+  var multiplier = (pr == 10 ? 2 : Number('1.' + pr)) - 0.5
   keywords = keywordsAndScores(keywords, totalWords, multiplier)
 
   return {
@@ -170,7 +169,7 @@ function compileKeywords(graph, map) {
 function keywordsAndScores(keywords, totalWords, multiplier) {
   return keywords.map(function getWordScores(el, i, ar) {
     var first = ar[0].count
-    var phraseLen = Math.max(1, el.word.split(' ').length * .68)
+    var phraseLen = Math.max(1, el.word.split(' ').length * 0.68)
     var score = (((el.count / first) + (el.count / totalWords)) * multiplier) * phraseLen
     return {
       word: el.word,
