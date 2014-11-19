@@ -27,5 +27,8 @@
     "sinon-chai": "^2.6.0",
     "when": "^3.5.0",
     "yamljs": "^0.2.0"
+  },
+  "devDependencies": {
+    "jshint": "^2.5.10"
   }
 }
