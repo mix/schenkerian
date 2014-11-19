@@ -14,7 +14,7 @@ describe('The analyzer', function () {
   it('should work when given a body', function (done) {
     return subject({
       url: 'http://dustindiaz.com',
-      body: '<title>something fun</title>'
+      body: '<html><title>something fun</title><body></body></html>'
     })
     .then(function (response) {
       console.log(response)
@@ -34,5 +34,12 @@ describe('The analyzer', function () {
       expect(response.pagerank).to.equal(5)
       done()
     })
+  })
+
+  it('rejects no body element exists', function () {
+    return expect(subject({
+      url: 'http://dustindiaz.com',
+      body: '<html><title>something fun</title></html>'
+    })).to.be.rejectedWith('Timed out trying to get body element')
   })
 })
