@@ -159,7 +159,7 @@ function cleanBody(body) {
     cornet.remove('.nav')
     cornet.remove('#nav')
 
-    cornet.select('html', function (parsedBody) {
+    cornet.select('body', function (parsedBody) {
       var content = cheerio(parsedBody).text().replace(RE_ALPHA_NUM, ' ')
       resolve(
         content.split(' ').map(function lowerCaseAndTrim(word) {
