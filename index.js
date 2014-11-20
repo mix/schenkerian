@@ -3,10 +3,7 @@ var pagerank = require('./pr')
 var Url = require('url')
 var commonWords = {}
 var gramophone = require('gramophone')
-var Parser = require('htmlparser2').WritableStream
-var Cornet = require('cornet')
-var Readable = require('stream').Readable
-var cheerio = require('cheerio')
+var jsdom = require('jsdom').jsdom
 var when = require('when')
 var pipeline = require('when/pipeline')
 var RE_HTML_JUNK = /<\s*(script|style|nav|footer|label|audio|video)[\s\S]*?>[\s\S]*?<\/\1>/g
@@ -25,7 +22,6 @@ var request = require('request').defaults({
     'user-agent': 'Schenkerianbot/1.0 (+https://github.com/openlikes/schenkerian)'
   }
 })
-
 
 var commonWordsArray = require('yamljs').load(__dirname + '/common-words.yaml').words
 
@@ -51,19 +47,13 @@ function getPageRank(url, prOption) {
 
 function sendToAnalyze (url, bodyOption, pr) {
   return when.promise(function promise(resolve, reject) {
-    if (bodyOption) return analyze(bodyOption, pr)
-      .then(function (res) {
-        resolve(lodash.extend({pagerank: pr}, res))
-      })
-      .otherwise(reject)
+    if (bodyOption) return analyze(bodyOption, pr).then(function (res) { resolve(lodash.extend({pagerank: pr}, res)) })
 
     request.get(url, function reqCallback(err, res, body) {
       if (err || res.statusCode != '200') return reject(new Error('Webpage could not resolve'))
-      analyze(body, pr)
-      .then(function (res) {
+      analyze(body, pr).then(function (res) {
         resolve(lodash.extend({pagerank: pr}, res))
       })
-      .otherwise(reject)
     })
   })
 }
@@ -72,8 +62,7 @@ function analyze(body, pr) {
   pr = pr || 5
   var things = gatherMetaTitle(body)
   var map = {}
-  return cleanBody(body)
-  .then(function (content) {
+  return cleanBody(body).then(function (content) {
     var graph = gramophone.extract(content, { score: true, stopWords: commonWordsArray })
 
     var splitContent = content.split(' ')
@@ -138,41 +127,67 @@ function gatherMetaTitle(body) {
 }
 
 function cleanBody(body) {
-  var cornet = new Cornet()
-  var stream = new Readable()
-
-  return when.promise(function (resolve, reject) {
-    stream.push(body)
-    stream.push(null)
-    stream.pipe(new Parser(cornet))
-
-    cornet.remove('head')
-    cornet.remove('script')
-    cornet.remove('style')
-    cornet.remove('nav')
-    cornet.remove('footer')
-    cornet.remove('label')
-    cornet.remove('audio')
-    cornet.remove('video')
-    cornet.remove('.footer')
-    cornet.remove('#footer')
-    cornet.remove('.nav')
-    cornet.remove('#nav')
-
-    cornet.select('body', function (parsedBody) {
-      var content = cheerio(parsedBody).text().replace(RE_ALPHA_NUM, ' ')
-      resolve(
-        content.split(' ').map(function lowerCaseAndTrim(word) {
-          return word.toLowerCase().replace(/[\d'"”<>\/]/g, ' ').trim()
-        })
-        .filter(function commonWordFilter(word) {
-          return !commonWords[word]
-        })
-        .join(' ')
-        .replace(RE_SPACES, ' ')
-      )
+  var doc
+  try {
+    doc = jsdom(body, {
+      features: {
+        FetchExternalResources: false,
+        ProcessExternalResources : false
+      }
     })
-  }).timeout(1000, 'Timed out trying to get body element')
+  } catch (e) {
+    return ''
+  }
+  var window = doc && doc.parentWindow
+  if (!window || !window.document || !window.document.body) return ''
+
+  var dom = window.document
+  return pipeline([
+    removeTagFromDOM.bind(null, 'script'),
+    removeTagFromDOM.bind(null, 'style'),
+    removeTagFromDOM.bind(null, 'nav'),
+    removeTagFromDOM.bind(null, 'footer'),
+    removeTagFromDOM.bind(null, 'label'),
+    removeTagFromDOM.bind(null, 'audio'),
+    removeTagFromDOM.bind(null, 'video'),
+
+    removeClassFromDOM.bind(null, 'footer'),
+    removeClassFromDOM.bind(null, 'nav'),
+
+    removeIdFromDOM.bind(null, 'footer'),
+    removeIdFromDOM.bind(null, 'nav')
+  ], dom)
+  .then(function (res) {
+    return selectBodySuccess(res.body.textContent)
+  })
+}
+
+function removeTagFromDOM(tagName, dom) {
+  ([]).slice.call(dom.getElementsByTagName(tagName)).forEach(function (i) { i.parentNode.removeChild(i) })
+  return dom
+}
+
+function removeClassFromDOM(className, dom) {
+  ([]).slice.call(dom.getElementsByClassName(className)).forEach(function (i) { i.parentNode.removeChild(i) })
+  return dom
+}
+
+function removeIdFromDOM(id, dom) {
+  var el = dom.getElementById(id)
+  if (el) el.parentNode.removeChild(el)
+  return dom
+}
+
+function selectBodySuccess(body) {
+  var content = body.replace(RE_ALPHA_NUM, ' ')
+  return content.split(' ').map(function lowerCaseAndTrim(word) {
+    return word.toLowerCase().replace(/[\d'"”<>\/]/g, ' ').trim()
+  })
+  .filter(function commonWordFilter(word) {
+    return !commonWords[word]
+  })
+  .join(' ')
+  .replace(RE_SPACES, ' ')
 }
 
 function compileKeywords(graph, map) {

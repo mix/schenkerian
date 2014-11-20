@@ -1,6 +1,7 @@
 var subject = require('../')
 
 describe('The analyzer', function () {
+
   it('should work on a webpage', function (done) {
     return subject({
       url: 'http://dustindiaz.com'
@@ -36,10 +37,15 @@ describe('The analyzer', function () {
     })
   })
 
-  it('rejects no body element exists', function () {
-    return expect(subject({
+  it('rejects no body element exists', function (done) {
+    return subject({
       url: 'http://dustindiaz.com',
       body: '<html><title>something fun</title></html>'
-    })).to.be.rejectedWith('Timed out trying to get body element')
+    })
+    .then(function (response) {
+      console.log(response)
+      expect(response.title).to.equal('something fun')
+      done()
+    })
   })
 })
