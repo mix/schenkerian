@@ -1,6 +1,30 @@
-var subject = require('../')
+var proxy = require('proxyquire')
 
 describe('The analyzer', function () {
+  var subject
+  beforeEach(function () {
+    subject = require('../')
+  })
+
+  it('be rejected when parsing with jsdom throws an error on a webpage', function (done) {
+    var loadStub = sinon.stub()
+    subject = proxy('../', {
+      'jsdom': {
+        jsdom: loadStub
+      }
+    })
+
+    loadStub.throws(new Error('Some Error'))
+    return subject({
+      url: 'http://dustindiaz.com'
+    })
+    .then(function (response) {
+      expect(response.title).to.equal('Dustin Diaz')
+      expect(response.pagerank).to.equal(0)
+      done()
+    })
+  })
+
   it('should work on a webpage', function (done) {
     return subject({
       url: 'http://dustindiaz.com'
@@ -11,13 +35,13 @@ describe('The analyzer', function () {
       done()
     })
   })
+
   it('should work when given a body', function (done) {
     return subject({
       url: 'http://dustindiaz.com',
       body: '<html><title>something fun</title><body></body></html>'
     })
     .then(function (response) {
-      console.log(response)
       expect(response.title).to.equal('something fun')
       done()
     })
@@ -29,17 +53,31 @@ describe('The analyzer', function () {
       pagerank: true
     })
     .then(function (response) {
-      console.log(response)
       expect(response.title).to.equal('Dustin Diaz')
       expect(response.pagerank).to.equal(5)
       done()
     })
   })
 
-  it('rejects no body element exists', function () {
-    return expect(subject({
+  it('resolves if no body element exists', function (done) {
+    return subject({
       url: 'http://dustindiaz.com',
       body: '<html><title>something fun</title></html>'
-    })).to.be.rejectedWith('Timed out trying to get body element')
+    })
+    .then(function (response) {
+      expect(response.title).to.equal('something fun')
+      done()
+    })
+  })
+
+  it('resolves if no inner html element exists', function (done) {
+    return subject({
+      url: 'http://dustindiaz.com',
+      body: '<html></html>'
+    })
+    .then(function (response) {
+      expect(response.title).to.equal('Untitled')
+      done()
+    })
   })
 })
