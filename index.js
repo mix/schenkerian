@@ -143,10 +143,10 @@ function cleanBody(body) {
       }
     })
   } catch (e) {
-    return ''
+    return when.resolve('')
   }
   var window = doc && doc.parentWindow
-  if (!window || !window.document || !window.document.body) return ''
+  if (!window || !window.document || !window.document.body) return when.resolve('')
 
   var dom = window.document
   return pipeline([
