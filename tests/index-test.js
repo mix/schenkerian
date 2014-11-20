@@ -6,23 +6,46 @@ describe('The analyzer', function () {
     subject = require('../')
   })
 
-  it('be rejected when parsing with jsdom throws an error on a webpage', function (done) {
+  it('be rejected when parsing with cheerio fails on a webpage', function () {
     var loadStub = sinon.stub()
     subject = proxy('../', {
-      'jsdom': {
-        jsdom: loadStub
+      'cheerio': loadStub
+    })
+
+    loadStub.throws(new Error('Some Error'))
+    return expect(subject({
+      url: 'http://dustindiaz.com'
+    })).to.be.rejectedWith('Some Error')
+  })
+
+  it('be rejected when cornet fails on a webpage', function () {
+    var loadStub = sinon.stub()
+    subject = proxy('../', {
+      'cornet': function Cornet() {
+        return {
+          remove: loadStub
+        }
       }
     })
 
     loadStub.throws(new Error('Some Error'))
-    return subject({
+    return expect(subject({
       url: 'http://dustindiaz.com'
+    })).to.be.rejectedWith('Some Error')
+  })
+
+  it('be rejected when request returns an empty string', function () {
+    var loadStub = sinon.stub()
+    subject = proxy('../', {
+      'request': {
+        get: loadStub
+      }
     })
-    .then(function (response) {
-      expect(response.title).to.equal('Dustin Diaz')
-      expect(response.pagerank).to.equal(0)
-      done()
-    })
+
+    loadStub.callsArgWith(1, null, {statusCode: 200}, '')
+    return expect(subject({
+      url: 'http://dustindiaz.com'
+    })).to.be.rejectedWith('Webpage could not resolve')
   })
 
   it('should work on a webpage', function (done) {
@@ -35,7 +58,6 @@ describe('The analyzer', function () {
       done()
     })
   })
-
   it('should work when given a body', function (done) {
     return subject({
       url: 'http://dustindiaz.com',
@@ -59,25 +81,10 @@ describe('The analyzer', function () {
     })
   })
 
-  it('resolves if no body element exists', function (done) {
-    return subject({
+  it('rejects no body element exists', function () {
+    return expect(subject({
       url: 'http://dustindiaz.com',
       body: '<html><title>something fun</title></html>'
-    })
-    .then(function (response) {
-      expect(response.title).to.equal('something fun')
-      done()
-    })
-  })
-
-  it('resolves if no inner html element exists', function (done) {
-    return subject({
-      url: 'http://dustindiaz.com',
-      body: '<html></html>'
-    })
-    .then(function (response) {
-      expect(response.title).to.equal('Untitled')
-      done()
-    })
+    })).to.be.rejectedWith('Timed out trying to get body element')
   })
 })

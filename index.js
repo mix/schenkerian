@@ -3,7 +3,10 @@ var pagerank = require('./pr')
 var Url = require('url')
 var commonWords = {}
 var gramophone = require('gramophone')
-var jsdom = require('jsdom').jsdom
+var Parser = require('htmlparser2').WritableStream
+var Cornet = require('cornet')
+var Readable = require('stream').Readable
+var cheerio = require('cheerio')
 var when = require('when')
 var pipeline = require('when/pipeline')
 var RE_HTML_JUNK = /<\s*(script|style|nav|footer|label|audio|video)[\s\S]*?>[\s\S]*?<\/\1>/g
@@ -54,7 +57,7 @@ function sendToAnalyze (url, bodyOption, pr) {
       .otherwise(reject)
 
     request.get(url, function reqCallback(err, res, body) {
-      if (err || res.statusCode != '200') return reject(new Error('Webpage could not resolve'))
+      if (err || res.statusCode != '200' || !body) return reject(new Error('Webpage could not resolve'))
       analyze(body, pr)
       .then(function (res) {
         resolve(lodash.extend({pagerank: pr}, res))
@@ -134,67 +137,51 @@ function gatherMetaTitle(body) {
 }
 
 function cleanBody(body) {
-  var doc
-  try {
-    doc = jsdom(body, {
-      features: {
-        FetchExternalResources: false,
-        ProcessExternalResources : false
-      }
-    })
-  } catch (e) {
-    return when.resolve('')
-  }
-  var window = doc && doc.parentWindow
-  if (!window || !window.document || !window.document.body) return when.resolve('')
+  var cornet = new Cornet()
+  var stream = new Readable()
 
-  var dom = window.document
-  return pipeline([
-    removeTagFromDOM.bind(null, 'script'),
-    removeTagFromDOM.bind(null, 'style'),
-    removeTagFromDOM.bind(null, 'nav'),
-    removeTagFromDOM.bind(null, 'footer'),
-    removeTagFromDOM.bind(null, 'label'),
-    removeTagFromDOM.bind(null, 'audio'),
-    removeTagFromDOM.bind(null, 'video'),
+  return when.promise(function (resolve, reject) {
+    stream.push(body)
+    stream.push(null)
+    try {
+      stream.pipe(new Parser(cornet))
+    } catch (e) {
+      return reject(e)
+    }
 
-    removeClassFromDOM.bind(null, 'footer'),
-    removeClassFromDOM.bind(null, 'nav'),
+    cornet.remove('head')
+    cornet.remove('script')
+    cornet.remove('style')
+    cornet.remove('nav')
+    cornet.remove('footer')
+    cornet.remove('label')
+    cornet.remove('audio')
+    cornet.remove('video')
+    cornet.remove('.footer')
+    cornet.remove('#footer')
+    cornet.remove('.nav')
+    cornet.remove('#nav')
 
-    removeIdFromDOM.bind(null, 'footer'),
-    removeIdFromDOM.bind(null, 'nav')
-  ], dom)
-  .then(function (res) {
-    return selectBodySuccess(res.body.textContent)
-  })
+    cornet.select('body', selectBodySuccess.bind(null, resolve, reject))
+  }).timeout(1000, 'Timed out trying to get body element')
 }
 
-function removeTagFromDOM(tagName, dom) {
-  ([]).slice.call(dom.getElementsByTagName(tagName)).forEach(function (i) { i.parentNode.removeChild(i) })
-  return dom
-}
-
-function removeClassFromDOM(className, dom) {
-  ([]).slice.call(dom.getElementsByClassName(className)).forEach(function (i) { i.parentNode.removeChild(i) })
-  return dom
-}
-
-function removeIdFromDOM(id, dom) {
-  var el = dom.getElementById(id)
-  if (el) el.parentNode.removeChild(el)
-  return dom
-}
-
-function selectBodySuccess(body) {
-  var content = body.replace(RE_ALPHA_NUM, ' ')
-  return content.split(' ').map(function lowerCaseAndTrim(word) {
-    return word.toLowerCase().replace(/[\d'"”<>\/]/g, ' ').trim()
-  })
-  .filter(function commonWordFilter(word) {
-    return !commonWords[word]
-  })
-  .join(' ')
-  .replace(RE_SPACES, ' ')
+function selectBodySuccess(resolve, reject, parsedBody) {
+    try {
+      var content = cheerio(parsedBody).text().replace(RE_ALPHA_NUM, ' ')
+      resolve(
+        content.split(' ').map(function lowerCaseAndTrim(word) {
+          return word.toLowerCase().replace(/[\d'"”<>\/]/g, ' ').trim()
+        })
+          .filter(function commonWordFilter(word) {
+            return !commonWords[word]
+          })
+          .join(' ')
+          .replace(RE_SPACES, ' ')
+      )
+    } catch (e) {
+      reject(e)
+    }
 }
 
 function compileKeywords(graph, map) {
