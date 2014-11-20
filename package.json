@@ -18,7 +18,7 @@
     "chai": "^1.9.2",
     "chai-as-promised": "^4.1.1",
     "cheerio": "^0.18.0",
-    "cornet": "^0.1.5",
+    "cornet": "git+https://github.com/openlikes/node-cornet.git",
     "gramophone": "0.0.3",
     "htmlparser2": "^3.8.2",
     "lodash": "^2.4.1",

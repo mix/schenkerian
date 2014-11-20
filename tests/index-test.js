@@ -34,19 +34,18 @@ describe('The analyzer', function () {
     })).to.be.rejectedWith('Some Error')
   })
 
-  it('be rejected when stream pipe fails on a webpage', function () {
+  it('be rejected when request returns an empty string', function () {
     var loadStub = sinon.stub()
     subject = proxy('../', {
-      'domelementtype': {
-        isTag: loadStub,
-        '@global': true
+      'request': {
+        get: loadStub
       }
     })
 
-    loadStub.throws(new Error('Some Error'))
+    loadStub.callsArgWith(1, null, {statusCode: 200}, '')
     return expect(subject({
       url: 'http://dustindiaz.com'
-    })).to.be.rejectedWith('Some Error')
+    })).to.be.rejectedWith('Webpage could not resolve')
   })
 
   it('should work on a webpage', function (done) {
@@ -65,7 +64,6 @@ describe('The analyzer', function () {
       body: '<html><title>something fun</title><body></body></html>'
     })
     .then(function (response) {
-      console.log(response)
       expect(response.title).to.equal('something fun')
       done()
     })
@@ -77,7 +75,6 @@ describe('The analyzer', function () {
       pagerank: true
     })
     .then(function (response) {
-      console.log(response)
       expect(response.title).to.equal('Dustin Diaz')
       expect(response.pagerank).to.equal(5)
       done()

@@ -26,7 +26,6 @@ var request = require('request').defaults({
   }
 })
 
-
 var commonWordsArray = require('yamljs').load(__dirname + '/common-words.yaml').words
 
 commonWordsArray.forEach(function commonWordAdd(w) {
@@ -58,7 +57,7 @@ function sendToAnalyze (url, bodyOption, pr) {
       .otherwise(reject)
 
     request.get(url, function reqCallback(err, res, body) {
-      if (err || res.statusCode != '200') return reject(new Error('Webpage could not resolve'))
+      if (err || res.statusCode != '200' || !body) return reject(new Error('Webpage could not resolve'))
       analyze(body, pr)
       .then(function (res) {
         resolve(lodash.extend({pagerank: pr}, res))
