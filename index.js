@@ -144,7 +144,11 @@ function cleanBody(body) {
   return when.promise(function (resolve, reject) {
     stream.push(body)
     stream.push(null)
-    stream.pipe(new Parser(cornet))
+    try {
+      stream.pipe(new Parser(cornet))
+    } catch (e) {
+      return reject(e)
+    }
 
     cornet.remove('head')
     cornet.remove('script')
@@ -159,20 +163,26 @@ function cleanBody(body) {
     cornet.remove('.nav')
     cornet.remove('#nav')
 
-    cornet.select('body', function (parsedBody) {
+    cornet.select('body', selectBodySuccess.bind(null, resolve, reject))
+  }).timeout(1000, 'Timed out trying to get body element')
+}
+
+function selectBodySuccess(resolve, reject, parsedBody) {
+    try {
       var content = cheerio(parsedBody).text().replace(RE_ALPHA_NUM, ' ')
       resolve(
         content.split(' ').map(function lowerCaseAndTrim(word) {
           return word.toLowerCase().replace(/[\d'"”<>\/]/g, ' ').trim()
         })
-        .filter(function commonWordFilter(word) {
-          return !commonWords[word]
-        })
-        .join(' ')
-        .replace(RE_SPACES, ' ')
+          .filter(function commonWordFilter(word) {
+            return !commonWords[word]
+          })
+          .join(' ')
+          .replace(RE_SPACES, ' ')
       )
-    })
-  }).timeout(1000, 'Timed out trying to get body element')
+    } catch (e) {
+      reject(e)
+    }
 }
 
 function compileKeywords(graph, map) {

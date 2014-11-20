@@ -1,6 +1,54 @@
-var subject = require('../')
+var proxy = require('proxyquire')
 
 describe('The analyzer', function () {
+  var subject
+  beforeEach(function () {
+    subject = require('../')
+  })
+
+  it('be rejected when parsing with cheerio fails on a webpage', function () {
+    var loadStub = sinon.stub()
+    subject = proxy('../', {
+      'cheerio': loadStub
+    })
+
+    loadStub.throws(new Error('Some Error'))
+    return expect(subject({
+      url: 'http://dustindiaz.com'
+    })).to.be.rejectedWith('Some Error')
+  })
+
+  it('be rejected when cornet fails on a webpage', function () {
+    var loadStub = sinon.stub()
+    subject = proxy('../', {
+      'cornet': function Cornet() {
+        return {
+          remove: loadStub
+        }
+      }
+    })
+
+    loadStub.throws(new Error('Some Error'))
+    return expect(subject({
+      url: 'http://dustindiaz.com'
+    })).to.be.rejectedWith('Some Error')
+  })
+
+  it('be rejected when stream pipe fails on a webpage', function () {
+    var loadStub = sinon.stub()
+    subject = proxy('../', {
+      'domelementtype': {
+        isTag: loadStub,
+        '@global': true
+      }
+    })
+
+    loadStub.throws(new Error('Some Error'))
+    return expect(subject({
+      url: 'http://dustindiaz.com'
+    })).to.be.rejectedWith('Some Error')
+  })
+
   it('should work on a webpage', function (done) {
     return subject({
       url: 'http://dustindiaz.com'

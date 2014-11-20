@@ -31,6 +31,8 @@
     "yamljs": "^0.2.0"
   },
   "devDependencies": {
-    "jshint": "^2.5.10"
+    "jshint": "^2.5.10",
+    "proxyquire": "^1.1.0",
+    "sinon": "^1.12.1"
   }
 }
