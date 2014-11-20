@@ -37,7 +37,7 @@ describe('The analyzer', function () {
     })
   })
 
-  it('rejects no body element exists', function (done) {
+  it('resolves if no body element exists', function (done) {
     return subject({
       url: 'http://dustindiaz.com',
       body: '<html><title>something fun</title></html>'

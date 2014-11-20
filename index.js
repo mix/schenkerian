@@ -47,13 +47,19 @@ function getPageRank(url, prOption) {
 
 function sendToAnalyze (url, bodyOption, pr) {
   return when.promise(function promise(resolve, reject) {
-    if (bodyOption) return analyze(bodyOption, pr).then(function (res) { resolve(lodash.extend({pagerank: pr}, res)) })
+    if (bodyOption) return analyze(bodyOption, pr)
+      .then(function (res) {
+        resolve(lodash.extend({pagerank: pr}, res))
+      })
+      .otherwise(reject)
 
     request.get(url, function reqCallback(err, res, body) {
       if (err || res.statusCode != '200') return reject(new Error('Webpage could not resolve'))
-      analyze(body, pr).then(function (res) {
+      analyze(body, pr)
+      .then(function (res) {
         resolve(lodash.extend({pagerank: pr}, res))
       })
+      .otherwise(reject)
     })
   })
 }
@@ -62,7 +68,8 @@ function analyze(body, pr) {
   pr = pr || 5
   var things = gatherMetaTitle(body)
   var map = {}
-  return cleanBody(body).then(function (content) {
+  return cleanBody(body)
+  .then(function (content) {
     var graph = gramophone.extract(content, { score: true, stopWords: commonWordsArray })
 
     var splitContent = content.split(' ')
