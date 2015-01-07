@@ -89,6 +89,10 @@ words:
   - here
   - hellip
   - amp
+  - nbsp
+  - quot
+  - lt
+  - gt
   - search
   - browse
   - a
