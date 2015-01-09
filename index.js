@@ -124,7 +124,7 @@ function gatherMetaTitle(body) {
       if (m.match('twitter:image:src') ||
         m.match('og:image')) {
         part = m.match(contentRe)
-        if (part && part[2]) things.image = part[2]
+        if (part && part[2] && !(/\.svg$/i).test(part[2])) things.image = part[2]
       }
     }
   })
