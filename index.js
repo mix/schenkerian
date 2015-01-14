@@ -151,6 +151,7 @@ function cleanBody(body) {
 
     cornet.remove('head')
     cornet.remove('script')
+    cornet.remove('noscript')
     cornet.remove('style')
     cornet.remove('nav')
     cornet.remove('footer')
