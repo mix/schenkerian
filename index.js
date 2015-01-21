@@ -149,19 +149,22 @@ function cleanBody(body) {
       return reject(e)
     }
 
-    cornet.remove('head')
-    cornet.remove('script')
-    cornet.remove('noscript')
-    cornet.remove('style')
-    cornet.remove('nav')
-    cornet.remove('footer')
-    cornet.remove('label')
-    cornet.remove('audio')
-    cornet.remove('video')
-    cornet.remove('.footer')
-    cornet.remove('#footer')
-    cornet.remove('.nav')
-    cornet.remove('#nav')
+    [
+      'head'
+    , 'script'
+    , 'noscript'
+    , 'style'
+    , 'nav'
+    , 'footer'
+    , 'label'
+    , 'audio'
+    , 'video'
+    , '.footer'
+    , '#footer'
+    , '.nav'
+    , '#nav'
+    , 'aside'
+    ].forEach(cornet.remove.bind(cornet))
 
     cornet.select('body', selectBodySuccess.bind(null, resolve, reject))
   }).timeout(1000, 'Timed out trying to get body element')
