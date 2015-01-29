@@ -164,6 +164,22 @@ function cleanBody(body) {
     , '.nav'
     , '#nav'
     , 'aside'
+    , '.sidebar'
+    , '#sidebar'
+    , '.side-bar'
+    , '#side-bar'
+    , '.comments'
+    , '#comments'
+    , '.share'
+    , '#share'
+    , '.google'
+    , '#google'
+    , '.facebook'
+    , '#facebook'
+    , '.twitter'
+    , '#twitter'
+    , '.email'
+    , '#email'
     ].forEach(cornet.remove.bind(cornet))
 
     cornet.select('body', selectBodySuccess.bind(null, resolve, reject))
