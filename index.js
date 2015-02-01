@@ -180,6 +180,7 @@ function cleanBody(body) {
     , '#twitter'
     , '.email'
     , '#email'
+    , '[style*="display: none"]'
     ].forEach(cornet.remove.bind(cornet))
 
     cornet.select('body', selectBodySuccess.bind(null, resolve, reject))
