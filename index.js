@@ -163,10 +163,12 @@ function cleanBody(body) {
     , '#footer'
     , '.nav'
     , '#nav'
+    , '#main-nav'
+    , '.main-nav'
     , 'aside'
     , '.sidebar'
     , '#sidebar'
-    , '.side-bar'
+    , '.sidebar'
     , '#side-bar'
     , '.comments'
     , '#comments'
@@ -181,6 +183,8 @@ function cleanBody(body) {
     , '.email'
     , '#email'
     , '[style*="display: none"]'
+    , '.right-news'
+    , '.right-ad'
     ].forEach(cornet.remove.bind(cornet))
 
     cornet.select('body', selectBodySuccess.bind(null, resolve, reject))
