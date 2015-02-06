@@ -176,6 +176,8 @@ function cleanBody(body) {
     , '[id*=comments]'
     , '[class*=share]'
     , '[id*=share]'
+    , '[class*=social]'
+    , '[id*=social]'
     , '[class*=nav]'
     , '[id*=nav]'
     , '[style*="display: none"]'
