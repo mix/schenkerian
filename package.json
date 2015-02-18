@@ -1,6 +1,6 @@
 {
   "name": "schenkerian",
-  "version": "0.0.20",
+  "version": "0.1.0",
   "description": "a HTML keyword analyzer",
   "main": "index.js",
   "scripts": {
