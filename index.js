@@ -97,7 +97,7 @@ function analyze(body, pr) {
     return {
       totalWords: totalWords,
       title: things.title.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&'),
-      description: things.description.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&'),
+      description: things.description ? things.description.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&') : '',
       image: things.image,
       relevance: keywords
     }
