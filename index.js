@@ -97,6 +97,7 @@ function analyze(body, pr) {
     return {
       totalWords: totalWords,
       title: things.title.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&'),
+      description: things.description.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&'),
       image: things.image,
       relevance: keywords
     }
@@ -108,10 +109,12 @@ function gatherMetaTitle(body) {
   var meta = body.replace(RE_HTML_JUNK, ' ').match(RE_META_TAGS) || []
   meta.forEach(function metaTag(m) {
     var part
+
     if (m.match('og:title')) {
       part = m.match(contentRe)
       if (part && part[2]) things.title = part[2]
     }
+
     if (!things.title) {
       if (m.match('twitter:title') ||
         m.match(/name=['"]?title['"]?/)) {
@@ -126,6 +129,11 @@ function gatherMetaTitle(body) {
         part = m.match(contentRe)
         if (part && part[2] && !(/\.svg$/i).test(part[2])) things.image = part[2]
       }
+    }
+
+    if (m.match('og:description')) {
+      part = m.match(contentRe)
+      if (part && part[2]) things.description = part[2]
     }
   })
 
