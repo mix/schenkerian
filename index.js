@@ -188,6 +188,8 @@ function cleanBody(body) {
     , '[id*=social]'
     , '[class*=nav]'
     , '[id*=nav]'
+    , '[class*=sponsored]'
+    , '[id*=sponsored]'
     , '[style*="display: none"]'
     , '.right-news'
     , '.right-ad'
