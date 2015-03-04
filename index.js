@@ -8,7 +8,6 @@ var Cornet = require('cornet')
 var Readable = require('stream').Readable
 var cheerio = require('cheerio')
 var when = require('when')
-var pipeline = require('when/pipeline')
 var RE_HTML_JUNK = /<\s*(script|style|nav|footer|label|audio|video)[\s\S]*?>[\s\S]*?<\/\1>/g
 var RE_SPACES = /\s+/g
 var RE_TITLE_TAG = /<title>([\s\S]+?)<\/title>/
@@ -35,35 +34,43 @@ commonWordsArray.forEach(function commonWordAdd(w) {
 module.exports = function _export(options) {
   var url = options.url
   options.pagerank = options.pagerank || false
-  return pipeline([
-    getPageRank.bind(null, url, options.pagerank),
-    sendToAnalyze.bind(null, url, options.body)
-  ])
+  if (options.body) {
+    return sendToAnalyze(url, options.body, options.pagerank)
+  } else {
+    return requestAndSendToAnalyze(url, options.pagerank)
+  }
 }
+
+function requestAndSendToAnalyze(url, prOption) {
+  return when.promise(function promise(resolve, reject) {
+    request.get(url, function reqCallback(err, res, body) {
+      if (err || res.statusCode != '200' || !body) return reject(new Error('Webpage could not resolve'))
+      var endUrl = res.request.uri.href
+
+      sendToAnalyze(endUrl, body, prOption)
+      .then(function (res) {
+        resolve(lodash.extend({url: endUrl}, res))
+      })
+      .otherwise(reject)
+    })
+  })
+}
+
+function sendToAnalyze (url, bodyOption, callPR) {
+  return getPageRank(url, callPR)
+  .then(function (pr) {
+    return analyze(bodyOption)
+    .then(function (res) {
+      return lodash.extend({pagerank: pr}, res)
+    })
+  })
+}
+
 function getPageRank(url, prOption) {
   return when.promise(function promise(resolve, reject) {
     if (prOption === false) return resolve(0)
     var host = Url.parse(url).host
     pagerank.get(host, resolve)
-  })
-}
-
-function sendToAnalyze (url, bodyOption, pr) {
-  return when.promise(function promise(resolve, reject) {
-    if (bodyOption) return analyze(bodyOption, pr)
-      .then(function (res) {
-        resolve(lodash.extend({pagerank: pr}, res))
-      })
-      .otherwise(reject)
-
-    request.get(url, function reqCallback(err, res, body) {
-      if (err || res.statusCode != '200' || !body) return reject(new Error('Webpage could not resolve'))
-      analyze(body, pr)
-      .then(function (res) {
-        resolve(lodash.extend({pagerank: pr}, res))
-      })
-      .otherwise(reject)
-    })
   })
 }
 
