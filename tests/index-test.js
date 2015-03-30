@@ -81,6 +81,19 @@ describe('The analyzer', function () {
     })
   })
 
+  it('returns the source content when required', function (done) {
+    return subject({
+      url: 'http://dustindiaz.com',
+      returnSource: true
+    })
+    .then(function (response) {
+      expect(response.title).to.equal('Dustin Diaz')
+      expect(response.source).to.exist
+      expect(response.source).to.contain('dustin diaz')
+      done()
+    })
+  })
+
   it('rejects no body element exists', function () {
     return expect(subject({
       url: 'http://dustindiaz.com',

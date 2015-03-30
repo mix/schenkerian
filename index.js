@@ -37,17 +37,17 @@ module.exports = function _export(options) {
   if (options.body) {
     return sendToAnalyze(url, options.body, options.pagerank)
   } else {
-    return requestAndSendToAnalyze(url, options.pagerank)
+    return requestAndSendToAnalyze(url, options.pagerank, options.returnSource)
   }
 }
 
-function requestAndSendToAnalyze(url, prOption) {
+function requestAndSendToAnalyze(url, prOption, returnSource) {
   return when.promise(function promise(resolve, reject) {
     request.get(url, function reqCallback(err, res, body) {
       if (err || res.statusCode != '200' || !body) return reject(new Error('Webpage could not resolve'))
       var endUrl = res.request.uri.href
 
-      sendToAnalyze(endUrl, body, prOption)
+      sendToAnalyze(endUrl, body, prOption, returnSource)
       .then(function (res) {
         resolve(lodash.extend({url: endUrl}, res))
       })
@@ -56,10 +56,10 @@ function requestAndSendToAnalyze(url, prOption) {
   })
 }
 
-function sendToAnalyze (url, bodyOption, callPR) {
+function sendToAnalyze (url, bodyOption, callPR, returnSource) {
   return getPageRank(url, callPR)
   .then(function (pr) {
-    return analyze(bodyOption)
+    return analyze(bodyOption, pr, returnSource)
     .then(function (res) {
       return lodash.extend({pagerank: pr}, res)
     })
@@ -74,40 +74,47 @@ function getPageRank(url, prOption) {
   })
 }
 
-function analyze(body, pr) {
+function analyze(body, pr, returnSource) {
   pr = pr || 5
   var things = gatherMetaTitle(body)
   var map = {}
   return cleanBody(body)
   .then(function (content) {
-    var graph = gramophone.extract(content, { score: true, stopWords: commonWordsArray })
+    var results = {}
+    if (returnSource) {
+      results = { source: content }
+    } else {
+      var graph = gramophone.extract(content, { score: true, stopWords: commonWordsArray })
 
-    var splitContent = content.split(' ')
-    splitContent.forEach(function wordCount(word) {
-      map[word] = map[word] || 0
-      map[word]++
-    })
+      var splitContent = content.split(' ')
+      splitContent.forEach(function wordCount(word) {
+        map[word] = map[word] || 0
+        map[word]++
+      })
 
-    // give weight to titles
-    lodash.uniq(things.title.replace(RE_SPACES, ' ').split(' ')).forEach(function (word, i, ar) {
-      word = word.toLowerCase().trim()
-      var n = Math.max(1, 7 - i)
-      map[word] = map[word] || 0
-      map[word] = map[word] + n
-    })
+      // give weight to titles
+      lodash.uniq(things.title.replace(RE_SPACES, ' ').split(' ')).forEach(function (word, i, ar) {
+        word = word.toLowerCase().trim()
+        var n = Math.max(1, 7 - i)
+        map[word] = map[word] || 0
+        map[word] = map[word] + n
+      })
 
-    var totalWords = splitContent.length
-    var keywords = compileKeywords(graph, map).splice(0, 30)
-    var multiplier = (pr == 10 ? 2 : Number('1.' + pr)) - 0.5
-    keywords = keywordsAndScores(keywords, totalWords, multiplier)
+      var totalWords = splitContent.length
+      var keywords = compileKeywords(graph, map).splice(0, 30)
+      var multiplier = (pr == 10 ? 2 : Number('1.' + pr)) - 0.5
+      keywords = keywordsAndScores(keywords, totalWords, multiplier)
+      results = {
+        totalWords: totalWords,
+        relevance: keywords
+      }
+    }
 
-    return {
-      totalWords: totalWords,
+    return lodash.assign(results, {
       title: things.title.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&'),
       description: things.description ? things.description.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&') : '',
-      image: things.image,
-      relevance: keywords
-    }
+      image: things.image
+    })
   })
 }
 
