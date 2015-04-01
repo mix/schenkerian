@@ -18,7 +18,8 @@ var RE_AMPS = /&amp;/g
 var contentRe = /content=(['"])([^\1]*?)(\1)/
 var request = require('request').defaults({
   followAllRedirects: true,
-  maxRedirects: 12,
+  maxRedirects: 25,
+  pool: { maxSockets: 25 },
   timeout: 3000,
   'headers': {
     'user-agent': 'Schenkerianbot/1.0 (+https://github.com/openlikes/schenkerian)'
