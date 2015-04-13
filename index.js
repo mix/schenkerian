@@ -159,10 +159,10 @@ function gatherMetaTitle(body) {
 }
 
 function cleanBody(body) {
-  var cornet = new Cornet()
-  var stream = new Readable()
-
   return when.promise(function (resolve, reject) {
+    var cornet = new Cornet()
+    var stream = new Readable()
+
     stream.push(body)
     stream.push(null)
     try {
@@ -209,7 +209,11 @@ function cleanBody(body) {
     , '.right-ad'
     ].join(','))
 
-    cornet.select('body', selectBodySuccess.bind(null, resolve, reject))
+    cornet.select('body', function (parsedBody) {
+      cornet.removeAllListeners()
+      cornet = null
+      selectBodySuccess(resolve, reject, parsedBody)
+    })
   }).timeout(1000, 'Timed out trying to get body element')
 }
 
