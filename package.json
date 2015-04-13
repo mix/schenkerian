@@ -24,7 +24,7 @@
     "lodash": "^2.4.1",
     "mocha": "^1.21.5",
     "pagerank": "^1.2.0",
-    "request": "^2.48.0",
+    "request": "^2.55.0",
     "sinon": "^1.10.3",
     "sinon-chai": "^2.6.0",
     "when": "^3.5.0",
