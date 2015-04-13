@@ -38,7 +38,9 @@ describe('The analyzer', function () {
     var loadStub = sinon.stub()
     subject = proxy('../', {
       'request': {
-        get: loadStub
+        defaults: function () {
+          return {get: loadStub}
+        }
       }
     })
 

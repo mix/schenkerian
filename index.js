@@ -8,7 +8,6 @@ var Cornet = require('cornet')
 var Readable = require('stream').Readable
 var cheerio = require('cheerio')
 var when = require('when')
-var RE_HTML_JUNK = /<\s*(script|style|nav|footer|label|audio|video)[\s\S]*?>[\s\S]*?<\/\1>/g
 var RE_SPACES = /\s+/g
 var RE_TITLE_TAG = /<title>([\s\S]+?)<\/title>/
 var RE_META_TAGS = /<meta ([\s\S]+?)\/?>/g
@@ -18,8 +17,8 @@ var RE_AMPS = /&amp;/g
 var contentRe = /content=(['"])([^\1]*?)(\1)/
 var request = require('request').defaults({
   followAllRedirects: true,
-  maxRedirects: 25,
-  pool: { maxSockets: 25 },
+  maxRedirects: 30,
+  pool: { maxSockets: 256 },
   timeout: 3000,
   'headers': {
     'user-agent': 'Schenkerianbot/1.0 (+https://github.com/openlikes/schenkerian)'
@@ -121,7 +120,7 @@ function analyze(body, pr, returnSource) {
 
 function gatherMetaTitle(body) {
   var things = {}
-  var meta = body.replace(RE_HTML_JUNK, ' ').match(RE_META_TAGS) || []
+  var meta = body.match(RE_META_TAGS) || []
   meta.forEach(function metaTag(m) {
     var part
 
@@ -172,7 +171,7 @@ function cleanBody(body) {
       return reject(e)
     }
 
-    [
+    cornet.remove([
       'head'
     , 'script'
     , 'noscript'
@@ -208,28 +207,28 @@ function cleanBody(body) {
     , '[style*="display: none"]'
     , '.right-news'
     , '.right-ad'
-    ].forEach(cornet.remove.bind(cornet))
+    ].join(','))
 
     cornet.select('body', selectBodySuccess.bind(null, resolve, reject))
   }).timeout(1000, 'Timed out trying to get body element')
 }
 
 function selectBodySuccess(resolve, reject, parsedBody) {
-    try {
-      var content = cheerio(parsedBody).text().replace(RE_ALPHA_NUM, ' ')
-      resolve(
-        content.split(' ').map(function lowerCaseAndTrim(word) {
-          return word.toLowerCase().replace(/[\d'"”<>\/]/g, ' ').trim()
+  try {
+    var content = cheerio(parsedBody).text().replace(RE_ALPHA_NUM, ' ')
+    resolve(
+      content.split(' ').map(function lowerCaseAndTrim(word) {
+        return word.toLowerCase().replace(/[\d'"”<>\/]/g, ' ').trim()
+      })
+        .filter(function commonWordFilter(word) {
+          return !commonWords[word]
         })
-          .filter(function commonWordFilter(word) {
-            return !commonWords[word]
-          })
-          .join(' ')
-          .replace(RE_SPACES, ' ')
-      )
-    } catch (e) {
-      reject(e)
-    }
+        .join(' ')
+        .replace(RE_SPACES, ' ')
+    )
+  } catch (e) {
+    reject(e)
+  }
 }
 
 function compileKeywords(graph, map) {
