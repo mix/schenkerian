@@ -8,6 +8,7 @@ var Cornet = require('cornet')
 var Readable = require('stream').Readable
 var cheerio = require('cheerio')
 var when = require('when')
+var pipeline = require('when/pipeline')
 var RE_SPACES = /\s+/g
 var RE_TITLE_TAG = /<title>([\s\S]+?)<\/title>/
 var RE_META_TAGS = /<meta ([\s\S]+?)\/?>/g
@@ -78,7 +79,9 @@ function analyze(body, pr, returnSource) {
   pr = pr || 5
   var things = gatherMetaTitle(body)
   var map = {}
-  return cleanBody(body)
+  var promises = [cleanBody.bind(null, body)]
+  if (!returnSource) promises.push(removeCommonWords)
+  return pipeline(promises)
   .then(function (content) {
     var results = {}
     if (returnSource) {
@@ -165,11 +168,8 @@ function cleanBody(body) {
 
     stream.push(body)
     stream.push(null)
-    try {
-      stream.pipe(new Parser(cornet))
-    } catch (e) {
-      return reject(e)
-    }
+
+    stream.pipe(new Parser(cornet))
 
     cornet.remove([
       'head'
@@ -212,27 +212,29 @@ function cleanBody(body) {
     cornet.select('body', function (parsedBody) {
       cornet.removeAllListeners()
       cornet = null
-      selectBodySuccess(resolve, reject, parsedBody)
+      resolve(parsedBody)
     })
   }).timeout(1000, 'Timed out trying to get body element')
+  .then(function (parsedBody) {
+    return cheerio(parsedBody).text()
+  })
 }
 
-function selectBodySuccess(resolve, reject, parsedBody) {
-  try {
-    var content = cheerio(parsedBody).text().replace(RE_ALPHA_NUM, ' ')
+function removeCommonWords(bodyText) {
+  return when.promise(function (resolve, reject) {
+    var content = bodyText.replace(RE_ALPHA_NUM, ' ')
     resolve(
-      content.split(' ').map(function lowerCaseAndTrim(word) {
+      content.split(' ')
+      .map(function lowerCaseAndTrim(word) {
         return word.toLowerCase().replace(/[\d'"”<>\/]/g, ' ').trim()
       })
-        .filter(function commonWordFilter(word) {
-          return !commonWords[word]
-        })
-        .join(' ')
-        .replace(RE_SPACES, ' ')
+      .filter(function commonWordFilter(word) {
+        return !commonWords[word]
+      })
+      .join(' ')
+      .replace(RE_SPACES, ' ')
     )
-  } catch (e) {
-    reject(e)
-  }
+  })
 }
 
 function compileKeywords(graph, map) {
