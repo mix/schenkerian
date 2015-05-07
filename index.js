@@ -16,7 +16,8 @@ var RE_ALPHA_NUM = /[^\w]/g
 var RE_BAD_TITLES = /&lt;\/?\w+?&gt;/g
 var RE_AMPS = /&amp;/g
 var contentRe = /content=(['"])([^\1]*?)(\1)/
-var request = require('request').defaults({
+var request = require('request')
+var defaultReqOptions = {
   followAllRedirects: true,
   maxRedirects: 30,
   pool: { maxSockets: 256 },
@@ -24,7 +25,7 @@ var request = require('request').defaults({
   'headers': {
     'user-agent': 'Schenkerianbot/1.0 (+https://github.com/openlikes/schenkerian)'
   }
-})
+}
 
 var commonWordsArray = require('yamljs').load(__dirname + '/common-words.yaml').words
 
@@ -46,13 +47,13 @@ function requestAndSendToAnalyze(url, prOption, returnSource, agentOptions) {
   return when.promise(function promise(resolve, reject) {
     var requestOptions = {url: url}
     if (agentOptions) {
-      requestOptions.agentClass = agentOptions.agent
+      requestOptions.agentClass = agentOptions.agentClass
       requestOptions.agentOptions = {
         socksHost: agentOptions.socksHost,
         socksPort: agentOptions.socksPort
       }
     }
-    request(requestOptions, function reqCallback(err, res, body) {
+    request(lodash.assign(requestOptions, defaultReqOptions), function reqCallback(err, res, body) {
       if (err || res.statusCode != '200' || !body) return reject(new Error('Webpage could not resolve'))
       var endUrl = res.request.uri.href
 

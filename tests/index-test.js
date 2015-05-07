@@ -1,5 +1,5 @@
 var proxy = require('proxyquire')
-
+var http = require('http')
 describe('The analyzer', function () {
   var subject
   beforeEach(function () {
@@ -37,11 +37,7 @@ describe('The analyzer', function () {
   it('be rejected when request returns an empty string', function () {
     var loadStub = sinon.stub()
     subject = proxy('../', {
-      'request': {
-        defaults: function () {
-          return loadStub
-        }
-      }
+      'request': loadStub
     })
 
     loadStub.callsArgWith(1, null, {statusCode: 200}, '')
@@ -60,6 +56,21 @@ describe('The analyzer', function () {
       done()
     })
   })
+
+  it('should work on a webpage when given an agent', function (done) {
+    return subject({
+      url: 'http://dustindiaz.com',
+      agent: {
+        agentClass: http.Agent
+      }
+    })
+      .then(function (response) {
+        expect(response.title).to.equal('Dustin Diaz')
+        expect(response.pagerank).to.equal(0)
+        done()
+      })
+  })
+
   it('should work when given a body', function (done) {
     return subject({
       url: 'http://dustindiaz.com',
