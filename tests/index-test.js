@@ -39,7 +39,7 @@ describe('The analyzer', function () {
     subject = proxy('../', {
       'request': {
         defaults: function () {
-          return {get: loadStub}
+          return loadStub
         }
       }
     })
