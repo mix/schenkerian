@@ -34,17 +34,25 @@ commonWordsArray.forEach(function commonWordAdd(w) {
 
 module.exports = function _export(options) {
   var url = options.url
-  options.pagerank = options.pagerank || false
+  var pagerank = options.pagerank || false
   if (options.body) {
-    return sendToAnalyze(url, options.body, options.pagerank)
+    return sendToAnalyze(url, options.body, pagerank)
   } else {
-    return requestAndSendToAnalyze(url, options.pagerank, options.returnSource)
+    return requestAndSendToAnalyze(url, pagerank, options.returnSource, options.agent)
   }
 }
 
-function requestAndSendToAnalyze(url, prOption, returnSource) {
+function requestAndSendToAnalyze(url, prOption, returnSource, agentOptions) {
   return when.promise(function promise(resolve, reject) {
-    request.get(url, function reqCallback(err, res, body) {
+    var requestOptions = {url: url}
+    if (agentOptions) {
+      requestOptions.agentClass = agentOptions.agent
+      requestOptions.agentOptions = {
+        socksHost: agentOptions.socksHost,
+        socksPort: agentOptions.socksPort
+      }
+    }
+    request(requestOptions, function reqCallback(err, res, body) {
       if (err || res.statusCode != '200' || !body) return reject(new Error('Webpage could not resolve'))
       var endUrl = res.request.uri.href
 
