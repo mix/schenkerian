@@ -17,6 +17,8 @@ var RE_BAD_TITLES = /&lt;\/?\w+?&gt;/g
 var RE_AMPS = /&amp;/g
 var contentRe = /content=(['"])([^\1]*?)(\1)/
 var request = require('request')
+var TfIdf = require('natural').TfIdf
+
 var defaultReqOptions = {
   followAllRedirects: true,
   maxRedirects: 30,
@@ -87,7 +89,6 @@ function getPageRank(url, prOption) {
 function analyze(body, pr, returnSource) {
   pr = pr || 5
   var things = gatherMetaTitle(body)
-  var map = {}
   var promises = [cleanBody.bind(null, body)]
   if (!returnSource) promises.push(removeCommonWords)
   return pipeline(promises)
@@ -96,29 +97,22 @@ function analyze(body, pr, returnSource) {
     if (returnSource) {
       results = { source: content }
     } else {
-      var graph = gramophone.extract(content, { score: true, stopWords: commonWordsArray, stem: true, limit: 20})
-
-      var splitContent = content.split(' ')
-      splitContent.forEach(function wordCount(word) {
-        map[word] = map[word] || 0
-        map[word]++
+      var graph = gramophone.extract([things.title, content].join(' '), {
+        score: true,
+        stopWords: commonWordsArray,
+        stem: true,
+        limit: 20
+      })
+      var tfidf = new TfIdf()
+      tfidf.addDocument([things.title, content].join(' '))
+      var tfGraph = graph.map(function (item) {
+        item.score = tfidf.tfidf(item.term, 0)
+        return item
       })
 
-      // give weight to titles
-      lodash.uniq(things.title.replace(RE_SPACES, ' ').split(' ')).forEach(function (word, i, ar) {
-        word = word.toLowerCase().trim()
-        var n = Math.max(1, 7 - i)
-        map[word] = map[word] || 0
-        map[word] = map[word] + n
-      })
-
-      var totalWords = splitContent.length
-      var keywords = compileKeywords(graph, map).splice(0, 30)
-      var multiplier = (pr == 10 ? 2 : Number('1.' + pr)) - 0.5
-      keywords = keywordsAndScores(keywords, totalWords, multiplier)
       results = {
-        totalWords: totalWords,
-        relevance: keywords
+        totalWords: content.split(' ').length,
+        relevance: tfGraph
       }
     }
 
@@ -243,33 +237,5 @@ function removeCommonWords(bodyText) {
       .join(' ')
       .replace(RE_SPACES, ' ')
     )
-  })
-}
-
-function compileKeywords(graph, map) {
-  return lodash.map(graph, function graphMap(item) {
-    return {
-      word: item.term,
-      count: item.tf + (map[item.term] ? map[item.term] : 0)
-    }
-  })
-  .filter(function nonWordFilter(item) {
-    return !(/^\w[\w -]+$/i).test(item.word) || !(/^\d+$/).test(item.word)
-  })
-}
-
-function keywordsAndScores(keywords, totalWords, multiplier) {
-  return keywords.map(function getWordScores(el, i, ar) {
-    var first = ar[0].count
-    var phraseLen = Math.max(1, el.word.split(' ').length * 0.68)
-    var score = (((el.count / first) + (el.count / totalWords)) * multiplier) * phraseLen
-    return {
-      word: el.word,
-      score: Math.round(score * 1000) / 1000,
-      count: el.count
-    }
-  })
-  .sort(function scoreSorter(a, b) {
-    return b.score - a.score
   })
 }
