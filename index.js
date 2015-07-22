@@ -96,7 +96,7 @@ function analyze(body, pr, returnSource) {
     if (returnSource) {
       results = { source: content }
     } else {
-      var graph = gramophone.extract(content, { score: true, stopWords: commonWordsArray })
+      var graph = gramophone.extract(content, { score: true, stopWords: commonWordsArray, stem: true })
 
       var splitContent = content.split(' ')
       splitContent.forEach(function wordCount(word) {
