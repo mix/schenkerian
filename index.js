@@ -222,6 +222,7 @@ function cleanBody(body) {
     , '[class*=banner]'
     , '[id*=banner]'
     , '[class*=abridged]'
+    , '[class*=newsletter]'
     , '[class*=highlight]'
     , '[style*="display: none"]'
     , '.right-news'
