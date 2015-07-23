@@ -109,9 +109,9 @@ function analyze(body, pr, returnSource) {
         item.score = tfidf.tfidf(item.term, 0)
         return item
       })
-      for (var i in tfGraph) {
-        if (tfGraph[i] === '') delete tfGraph[i];
-      }
+      tfGraph = lodash.filter(tfGraph, function (item) {
+        return item.term !== ''
+      })
 
       results = {
         totalWords: content.split(' ').length,
