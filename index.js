@@ -109,6 +109,9 @@ function analyze(body, pr, returnSource) {
         item.score = tfidf.tfidf(item.term, 0)
         return item
       })
+      for (var i in tfGraph) {
+        if (tfGraph[i] === '') delete tfGraph[i];
+      }
 
       results = {
         totalWords: content.split(' ').length,
