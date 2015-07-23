@@ -198,6 +198,8 @@ function cleanBody(body) {
     , '#email'
     , '[class*=footer]'
     , '[id*=footer]'
+    , '[class*=header]'
+    , '[id*=header]'
     , '[class^=side]'
     , '[id^=side]'
     , '[class*=comments]'
