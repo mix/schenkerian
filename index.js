@@ -182,6 +182,7 @@ function cleanBody(body) {
     , 'script'
     , 'noscript'
     , 'style'
+    , 'iframe'
     , 'nav'
     , 'footer'
     , 'label'
