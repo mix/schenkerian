@@ -25,7 +25,7 @@ var defaultReqOptions = {
   pool: { maxSockets: 256 },
   timeout: 3000,
   'headers': {
-    'user-agent': 'Schenkerianbot/1.0 (+https://github.com/openlikes/schenkerian)'
+    'user-agent': 'Schenkerianbot/1.0 (+https://github.com/mix/schenkerian)'
   }
 }
 
