@@ -237,6 +237,8 @@ function cleanBody(body) {
     , '[id*=next]'
     , '[class^=right]'
     , '[id^=right]'
+    , '[class*=link]'
+    , '[id*=link]'
     , '[style*="display: none"]'
     ].join(','))
 
