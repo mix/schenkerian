@@ -71,7 +71,7 @@ function requestAndSendToAnalyze(url, prOption, returnSource, agentOptions) {
 function sendToAnalyze (url, bodyOption, callPR, returnSource) {
   return getPageRank(url, callPR)
   .then(function (pr) {
-    return analyze(bodyOption, pr, returnSource)
+    return analyze(url, bodyOption, pr, returnSource)
     .then(function (res) {
       return lodash.extend({pagerank: pr}, res)
     })
@@ -86,9 +86,9 @@ function getPageRank(url, prOption) {
   })
 }
 
-function analyze(body, pr, returnSource) {
+function analyze(url, body, pr, returnSource) {
   pr = pr || 5
-  var things = gatherMetaTitle(body)
+  var things = gatherMetaTitle(url, body)
   var promises = [cleanBody.bind(null, body)]
   if (!returnSource) promises.push(removeCommonWords)
   return pipeline(promises)
@@ -127,7 +127,7 @@ function analyze(body, pr, returnSource) {
   })
 }
 
-function gatherMetaTitle(body) {
+function gatherMetaTitle(url, body) {
   var things = {}
   var meta = body.match(RE_META_TAGS) || []
   meta.forEach(function metaTag(m) {
@@ -147,10 +147,16 @@ function gatherMetaTitle(body) {
     }
 
     if (!things.image) {
-      if (m.match('twitter:image:src') ||
-        m.match('og:image')) {
+      if (m.match('twitter:image:src') || m.match('og:image')) {
         part = m.match(contentRe)
-        if (part && part[2] && !(/\.svg$/i).test(part[2])) things.image = part[2]
+        if (part && part[2] && !(/\.svg$/i).test(part[2])) {
+          things.image = part[2]
+          var host = Url.parse(url).host
+          if (!(/^(http(s)?\:)?\/\//i).test(things.image) && !(new RegExp(host, 'i')).test(things.image)) {
+            things.image = 'http://' + host + '/' + things.image
+          }
+          if ((/^\/\//).test(things.image)) things.image = 'http:' + things.image
+        }
       }
     }
 
