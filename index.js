@@ -150,7 +150,7 @@ function gatherMetaTitle(url, body) {
       if (m.match('twitter:image:src') || m.match('og:image')) {
         part = m.match(contentRe)
         if (part && part[2] && !(/\.svg$/i).test(part[2])) {
-          things.image = part[2]
+          things.image = part[2] && part[2].trim()
           var host = Url.parse(url).host
           if (!(/^(http(s)?\:)?\/\//i).test(things.image) && !(new RegExp(host, 'i')).test(things.image)) {
             things.image = 'http://' + host + '/' + things.image
