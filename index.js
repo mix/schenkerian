@@ -133,13 +133,13 @@ function gatherMetaTitle(url, body) {
   meta.forEach(function metaTag(m) {
     var part
 
-    if (m.match('og:title')) {
+    if (m.match('\"og:title\"')) {
       part = m.match(contentRe)
       if (part && part[2]) things.title = part[2]
     }
 
     if (!things.title) {
-      if (m.match('twitter:title') ||
+      if (m.match('\"twitter:title\"') ||
         m.match(/name=['"]?title['"]?/)) {
         part = m.match(contentRe)
         if (part && part[2]) things.title = part[2]
@@ -147,7 +147,7 @@ function gatherMetaTitle(url, body) {
     }
 
     if (!things.image) {
-      if (m.match('twitter:image:src') || m.match('og:image')) {
+      if (m.match('\"twitter:image:src\"') || m.match('\"og:image\"')) {
         part = m.match(contentRe)
         if (part && part[2] && !(/\.svg$/i).test(part[2])) {
           things.image = part[2] && part[2].trim()
@@ -160,7 +160,7 @@ function gatherMetaTitle(url, body) {
       }
     }
 
-    if (m.match('og:description')) {
+    if (m.match('\"og:description\"')) {
       part = m.match(contentRe)
       if (part && part[2]) things.description = part[2]
     }
