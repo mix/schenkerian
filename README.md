@@ -1,3 +1,5 @@
+[![Code Climate](https://codeclimate.com/repos/561d4f47e30ba05237000817/badges/5647015a9134d2527d3b/gpa.svg)](https://codeclimate.com/repos/561d4f47e30ba05237000817/feed)
+
 ## HTML Schenkerian analyzer
 
 [Schenkerian analysis](http://en.wikipedia.org/wiki/Schenkerian_analysis) is a method of musical analysis by interpreting the underlying structure of a tonal work and to help reading the score according to that structure.
