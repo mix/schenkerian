@@ -1,4 +1,4 @@
-var lodash = require('lodash')
+var _ = require('lodash')
 var pagerank = require('./pr')
 var Url = require('url')
 var commonWords = {}
@@ -55,13 +55,13 @@ function requestAndSendToAnalyze(url, prOption, returnSource, agentOptions) {
         socksPort: agentOptions.socksPort
       }
     }
-    request(lodash.assign(requestOptions, defaultReqOptions), function reqCallback(err, res, body) {
+    request(_.merge(requestOptions, defaultReqOptions), function reqCallback(err, res, body) {
       if (err || res.statusCode != '200' || !body) return reject(new Error('Webpage could not resolve'))
       var endUrl = res.request.uri.href
 
       sendToAnalyze(endUrl, body, prOption, returnSource)
       .then(function (res) {
-        resolve(lodash.extend({url: endUrl}, res))
+        resolve(_.merge({url: endUrl}, res))
       })
       .otherwise(reject)
     })
@@ -73,7 +73,7 @@ function sendToAnalyze (url, bodyOption, callPR, returnSource) {
   .then(function (pr) {
     return analyze(url, bodyOption, pr, returnSource)
     .then(function (res) {
-      return lodash.extend({pagerank: pr}, res)
+      return _.merge({pagerank: pr}, res)
     })
   })
 }
@@ -109,7 +109,7 @@ function analyze(url, body, pr, returnSource) {
         item.score = tfidf.tfidf(item.term, 0)
         return item
       })
-      tfGraph = lodash.filter(tfGraph, function (item) {
+      tfGraph = _.filter(tfGraph, function (item) {
         return item.term !== ''
       })
 
@@ -119,7 +119,7 @@ function analyze(url, body, pr, returnSource) {
       }
     }
 
-    return lodash.assign(results, {
+    return _.merge(results, {
       title: things.title.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&'),
       description: things.description ? things.description.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&') : '',
       image: things.image
