@@ -19,7 +19,7 @@
     "cornet": "git+https://github.com/mix/node-cornet.git",
     "gramophone": "0.0.3",
     "htmlparser2": "^3.8.2",
-    "lodash": "^4.0.1",
+    "lodash": "^4.2.1",
     "natural": "^0.2.1",
     "pagerank": "^2.0.0",
     "request": "^2.63.0",
