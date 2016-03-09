@@ -146,33 +146,20 @@ function analyze(url, body, pr, returnSource) {
 }
 
 function gatherMetaData(url, body) {
-  return when.promise(function (resolve, reject) {
-    var cornet = new Cornet()
-    var stream = new Readable()
+  var removeSelectors = [
+    'script'
+  , 'noscript'
+  , 'style'
+  , 'iframe'
+  , 'nav'
+  , 'footer'
+  , 'label'
+  , 'audio'
+  , 'video'
+  , 'aside'
+  ]
 
-    stream.push(body)
-    stream.push(null)
-
-    stream.pipe(new Parser(cornet))
-    cornet.remove([
-      'script'
-    , 'noscript'
-    , 'style'
-    , 'iframe'
-    , 'nav'
-    , 'footer'
-    , 'label'
-    , 'audio'
-    , 'video'
-    , 'aside'
-    ].join(','))
-
-    cornet.select('head', function (parsedBody) {
-      cornet.removeAllListeners()
-      cornet = null
-      resolve(parsedBody)
-    })
-  }).timeout(1000, 'Timed out trying to get head element')
+  return parseDom(body, 'head', removeSelectors.join(','))
   .then(function (parsedBody) {
     var cheerioBody = cheerio(parsedBody)
     var title
@@ -211,6 +198,78 @@ function gatherMetaData(url, body) {
 }
 
 function cleanBody(body) {
+  var removeSelectors = [
+    'head'
+  , 'script'
+  , 'noscript'
+  , 'style'
+  , 'iframe'
+  , 'nav'
+  , 'footer'
+  , 'label'
+  , 'audio'
+  , 'video'
+  , 'aside'
+  , '[class*=google]'
+  , '[id*=google]'
+  , '[class*=facebook]'
+  , '[id*=facebook]'
+  , '[class*=twitter]'
+  , '[id*=twitter]'
+  , '[class*=email]'
+  , '[id*=email]'
+  , '[class*=footer]'
+  , '[id*=footer]'
+  , '[class*=header]'
+  , '[id*=header]'
+  , '[class^=side]'
+  , '[id^=side]'
+  , '[class*=comments]'
+  , '[id*=comments]'
+  , '[class*=share]'
+  , '[id*=share]'
+  , '[class*=social]'
+  , '[id*=social]'
+  , '[class*=nav]'
+  , '[id*=nav]'
+  , '[class*=sponsored]'
+  , '[id*=sponsored]'
+  , '[class*=widget]'
+  , '[id*=widget]'
+  , '[class*=ad]'
+  , '[id*=ad]'
+  , '[class*=promo]'
+  , '[id*=promo]'
+  , '[class*=banner]'
+  , '[id*=banner]'
+  , '[class*=abridged]'
+  , '[id*=abridged]'
+  , '[class*=news]'
+  , '[id*=news]'
+  , '[class*=highlight]'
+  , '[id*=highlight]'
+  , '[class*=copyright]'
+  , '[id*=copyright]'
+  , '[class*=popular]'
+  , '[id*=popular]'
+  , '[class*=prev]'
+  , '[id*=prev]'
+  , '[class*=next]'
+  , '[id*=next]'
+  , '[class^=right]'
+  , '[id^=right]'
+  , '[class*=link]'
+  , '[id*=link]'
+  , '[style*="display: none"]'
+  ]
+
+  return parseDom(body, 'body', removeSelectors.join(','))
+  .then(function (parsedBody) {
+    return cheerio(parsedBody).text()
+  })
+}
+
+function parseDom(body, elementSelector, removeSelector) {
   return when.promise(function (resolve, reject) {
     var cornet = new Cornet()
     var stream = new Readable()
@@ -219,83 +278,15 @@ function cleanBody(body) {
     stream.push(null)
 
     stream.pipe(new Parser(cornet))
+    cornet.remove(removeSelector)
 
-    cornet.remove([
-      'head'
-    , 'script'
-    , 'noscript'
-    , 'style'
-    , 'iframe'
-    , 'nav'
-    , 'footer'
-    , 'label'
-    , 'audio'
-    , 'video'
-    , 'aside'
-    , '[class*=google]'
-    , '[id*=google]'
-    , '[class*=facebook]'
-    , '[id*=facebook]'
-    , '[class*=twitter]'
-    , '[id*=twitter]'
-    , '[class*=email]'
-    , '[id*=email]'
-    , '[class*=footer]'
-    , '[id*=footer]'
-    , '[class*=header]'
-    , '[id*=header]'
-    , '[class^=side]'
-    , '[id^=side]'
-    , '[class*=comments]'
-    , '[id*=comments]'
-    , '[class*=share]'
-    , '[id*=share]'
-    , '[class*=social]'
-    , '[id*=social]'
-    , '[class*=nav]'
-    , '[id*=nav]'
-    , '[class*=sponsored]'
-    , '[id*=sponsored]'
-    , '[class*=widget]'
-    , '[id*=widget]'
-    , '[class*=ad]'
-    , '[id*=ad]'
-    , '[class*=promo]'
-    , '[id*=promo]'
-    , '[class*=banner]'
-    , '[id*=banner]'
-    , '[class*=abridged]'
-    , '[id*=abridged]'
-    , '[class*=news]'
-    , '[id*=news]'
-    , '[class*=highlight]'
-    , '[id*=highlight]'
-    , '[class*=copyright]'
-    , '[id*=copyright]'
-    , '[class*=popular]'
-    , '[id*=popular]'
-    , '[class*=prev]'
-    , '[id*=prev]'
-    , '[class*=next]'
-    , '[id*=next]'
-    , '[class^=right]'
-    , '[id^=right]'
-    , '[class*=link]'
-    , '[id*=link]'
-    , '[style*="display: none"]'
-    ].join(','))
-
-    cornet.select('body', function (parsedBody) {
+    cornet.select(elementSelector, function (parsedBody) {
       cornet.removeAllListeners()
       cornet = null
       resolve(parsedBody)
     })
-  }).timeout(1000, 'Timed out trying to get body element')
-  .then(function (parsedBody) {
-    return cheerio(parsedBody).text()
-  })
+  }).timeout(1000, 'Timed out trying to get ' + elementSelector + ' element')
 }
-
 function removeCommonWords(bodyText) {
   return when.promise(function (resolve, reject) {
     var content = bodyText.replace(RE_ALPHA_NUM, ' ')
