@@ -10,12 +10,9 @@ var cheerio = require('cheerio')
 var when = require('when')
 var pipeline = require('when/pipeline')
 var RE_SPACES = /\s+/g
-var RE_TITLE_TAG = /<title>([\s\S]+?)<\/title>/
-var RE_META_TAGS = /<meta ([\s\S]+?)\/?>/g
 var RE_ALPHA_NUM = /[^\w]/g
 var RE_BAD_TITLES = /&lt;\/?\w+?&gt;/g
 var RE_AMPS = /&amp;/g
-var contentRe = /content=(['"])([^\1]*?)(\1)/
 var TfIdf = require('natural').TfIdf
 var path = require('path')
 var childProcess = require('child_process')
@@ -105,11 +102,15 @@ function getPageRank(url, prOption) {
 
 function analyze(url, body, pr, returnSource) {
   pr = pr || 5
-  var things = gatherMetaTitle(url, body)
   var promises = [cleanBody.bind(null, body)]
   if (!returnSource) promises.push(removeCommonWords)
-  return pipeline(promises)
-  .then(function (content) {
+  return when.all([
+    gatherMetaData(url, body),
+    pipeline(promises)
+  ])
+  .then(function (data) {
+    var things = data[0]
+    var content = data[1]
     var results = {}
     if (returnSource) {
       results = { source: content }
@@ -144,50 +145,69 @@ function analyze(url, body, pr, returnSource) {
   })
 }
 
-function gatherMetaTitle(url, body) {
-  var things = {}
-  var meta = body.match(RE_META_TAGS) || []
-  meta.forEach(function metaTag(m) {
-    var part
+function gatherMetaData(url, body) {
+  return when.promise(function (resolve, reject) {
+    var cornet = new Cornet()
+    var stream = new Readable()
 
-    if (m.match('\"og:title\"')) {
-      part = m.match(contentRe)
-      if (part && part[2]) things.title = part[2]
+    stream.push(body)
+    stream.push(null)
+
+    stream.pipe(new Parser(cornet))
+    cornet.remove([
+      'script'
+    , 'noscript'
+    , 'style'
+    , 'iframe'
+    , 'nav'
+    , 'footer'
+    , 'label'
+    , 'audio'
+    , 'video'
+    , 'aside'
+    ].join(','))
+
+    cornet.select('head', function (parsedBody) {
+      cornet.removeAllListeners()
+      cornet = null
+      resolve(parsedBody)
+    })
+  }).timeout(1000, 'Timed out trying to get head element')
+  .then(function (parsedBody) {
+    var cheerioBody = cheerio(parsedBody)
+    var title
+    cheerioBody.find('meta[property="og:title"], meta[property="twitter:title"]').each(function (i, elem) {
+      if (!title) title = cheerio(elem).attr('content').trim()
+    })
+    if (!title) {
+      cheerioBody.find('title').each(function (i, elem) {
+        title = cheerio(elem).text().trim()
+      })
     }
 
-    if (!things.title) {
-      if (m.match('\"twitter:title\"') ||
-        m.match(/name=['"]?title['"]?/)) {
-        part = m.match(contentRe)
-        if (part && part[2]) things.title = part[2]
+    var image
+    cheerioBody.find('meta[property="og:image"], meta[property="twitter:image:src"]').each(function (i, elem) {
+      if (!image) image = cheerio(elem).attr('content').trim()
+    })
+    if (image) {
+      var host = Url.parse(url).host
+      if (!(/^(http(s)?\:)?\/\//i).test(image) && !(new RegExp(host, 'i')).test(image)) {
+        image = 'http://' + host + '/' + image
       }
+      if ((/^\/\//).test(image)) image = 'http:' + image
     }
 
-    if (!things.image) {
-      if (m.match('\"twitter:image:src\"') || m.match('\"og:image\"')) {
-        part = m.match(contentRe)
-        if (part && part[2] && !(/\.svg$/i).test(part[2])) {
-          things.image = part[2] && part[2].trim()
-          var host = Url.parse(url).host
-          if (!(/^(http(s)?\:)?\/\//i).test(things.image) && !(new RegExp(host, 'i')).test(things.image)) {
-            things.image = 'http://' + host + '/' + things.image
-          }
-          if ((/^\/\//).test(things.image)) things.image = 'http:' + things.image
-        }
-      }
-    }
+    var description
+    cheerioBody.find('meta[property="og:description"]').each(function (i, elem) {
+      description = cheerio(elem).attr('content').trim()
+    })
 
-    if (m.match('\"og:description\"')) {
-      part = m.match(contentRe)
-      if (part && part[2]) things.description = part[2]
+    return {
+      title: title || 'Untitled',
+      image: image,
+      description: description
     }
   })
-
-  if (!things.title) {
-    var title = body.match(RE_TITLE_TAG)
-    things.title = title ? title[1] : 'Untitled'
-  }
-  return things
 }
 
 function cleanBody(body) {
