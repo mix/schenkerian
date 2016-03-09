@@ -55,7 +55,7 @@ function requestAndSendToAnalyze(url, prOption, returnSource, agentOptions) {
   }
 
   var endUrl
-  return renderPage(url, _.merge(requestOptions, defaultReqOptions).headers['user-agent'])
+  return renderPage(url, _.merge(requestOptions, defaultReqOptions))
   .then(function (results) {
     endUrl = results.url
     return sendToAnalyze(endUrl, results.body, prOption, returnSource)
@@ -64,13 +64,18 @@ function requestAndSendToAnalyze(url, prOption, returnSource, agentOptions) {
     return _.merge({url: endUrl}, res)
   })
 }
-function renderPage(url, userAgent) {
+function renderPage(url, options) {
   return when.promise(function promise(resolve, reject) {
-    var childArgs = [
+    var childArgs = ['--ignore-ssl-errors=true']
+    if (options.agentOptions) {
+      childArgs.push('--proxy=' + options.agentOptions.socksHost + ':' + options.agentOptions.socksPort)
+    }
+    childArgs = childArgs.concat([
       path.join(__dirname, 'phantom-load.js'),
       url,
-      userAgent
-    ]
+      options.headers['user-agent'],
+      options.maxRedirects
+    ])
 
     childProcess.execFile(phantomjs.path, childArgs, function(err, stdout, stderr) {
       var output = stdout ? stdout.split('\n') : []
