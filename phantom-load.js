@@ -4,14 +4,22 @@ var phantomWebpage = require('webpage')
 var originalUrl = system.args[1]
 var userAgent = system.args[2]
 var maxRedirects = system.args[3]
+var timeout = system.args[4]
 
 function renderPage(url) {
   var page = phantomWebpage.create()
   var redirectURL = null
 
   page.settings.userAgent = userAgent
+  page.settings.resourceTimeout = timeout
+
   page.onError = function (msg, trace) {
-    console.error('Failed to retrieve url[' + url + '] :' + msg)
+    console.log('Failed to retrieve url[' + url + '] : ' + msg)
+    phantom.exit(1)
+  }
+
+  page.onResourceTimeout = function (request) {
+    console.log('Timed out retrieving url[' + url + '] : ' + JSON.stringify(request))
     phantom.exit(1)
   }
 
@@ -19,7 +27,7 @@ function renderPage(url) {
     if (url === resource.url && resource.redirectURL) {
       redirectURL = resource.redirectURL
       if (maxRedirects === 0) {
-        console.error('Max Redirects reached for ' + originalUrl)
+        console.log('Max Redirects reached for ' + originalUrl)
         phantom.exit(1)
       }
       maxRedirects--

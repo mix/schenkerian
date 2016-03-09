@@ -19,6 +19,7 @@ var childProcess = require('child_process')
 var phantomjs = require('phantomjs-prebuilt')
 
 var defaultReqOptions = {
+  timeout: 3000,
   maxRedirects: 30,
   'headers': {
     'user-agent': 'Schenkerianbot/1.0 (+https://github.com/mix/schenkerian)'
@@ -71,12 +72,13 @@ function renderPage(url, options) {
       path.join(__dirname, 'phantom-load.js'),
       url,
       options.headers['user-agent'],
-      options.maxRedirects
+      options.maxRedirects,
+      options.timeout
     ])
 
     childProcess.execFile(phantomjs.path, childArgs, function(err, stdout, stderr) {
       var output = stdout ? stdout.split('\n') : []
-      if (err && err.code === 1) reject(new Error(stderr))
+      if (err && err.code === 1) reject(new Error(stdout))
       else resolve({url: output[0], body: output.slice(1).join('')})
     })
   })
