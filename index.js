@@ -18,6 +18,9 @@ var RE_AMPS = /&amp;/g
 var contentRe = /content=(['"])([^\1]*?)(\1)/
 var request = require('request')
 var TfIdf = require('natural').TfIdf
+var path = require('path')
+var childProcess = require('child_process')
+var phantomjs = require('phantomjs-prebuilt')
 
 var defaultReqOptions = {
   followAllRedirects: true,
@@ -46,24 +49,37 @@ module.exports = function _export(options) {
 }
 
 function requestAndSendToAnalyze(url, prOption, returnSource, agentOptions) {
-  return when.promise(function promise(resolve, reject) {
-    var requestOptions = {url: url}
-    if (agentOptions) {
-      requestOptions.agentClass = agentOptions.agentClass
-      requestOptions.agentOptions = {
-        socksHost: agentOptions.socksHost,
-        socksPort: agentOptions.socksPort
-      }
+  var requestOptions = {url: url}
+  if (agentOptions) {
+    requestOptions.agentClass = agentOptions.agentClass
+    requestOptions.agentOptions = {
+      socksHost: agentOptions.socksHost,
+      socksPort: agentOptions.socksPort
     }
-    request(_.merge(requestOptions, defaultReqOptions), function reqCallback(err, res, body) {
-      if (err || res.statusCode != '200' || !body) return reject(new Error('Webpage could not resolve'))
-      var endUrl = res.request.uri.href
+  }
 
-      sendToAnalyze(endUrl, body, prOption, returnSource)
-      .then(function (res) {
-        resolve(_.merge({url: endUrl}, res))
-      })
-      .otherwise(reject)
+  var endUrl
+  return renderPage(url, _.merge(requestOptions, defaultReqOptions).headers['user-agent'])
+  .then(function (results) {
+    endUrl = results.url
+    return sendToAnalyze(endUrl, results.body, prOption, returnSource)
+  })
+  .then(function (res) {
+    return _.merge({url: endUrl}, res)
+  })
+}
+function renderPage(url, userAgent) {
+  return when.promise(function promise(resolve, reject) {
+    var childArgs = [
+      path.join(__dirname, 'phantom-load.js'),
+      url,
+      userAgent
+    ]
+
+    childProcess.execFile(phantomjs.path, childArgs, function(err, stdout, stderr) {
+      var output = stdout ? stdout.split('\n') : []
+      if (err && err.code === 1) reject(new Error(stderr))
+      else resolve({url: output[0], body: output.slice(1).join('')})
     })
   })
 }
