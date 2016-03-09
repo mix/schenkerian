@@ -1,7 +1,8 @@
 var system = require('system')
+var phantomWebpage = require('webpage')
 
 function renderPage(url, userAgent) {
-  var page = require('webpage').create()
+  var page = phantomWebpage.create()
   var redirectURL = null
 
   page.settings.userAgent = userAgent
@@ -11,7 +12,7 @@ function renderPage(url, userAgent) {
   }
 
   page.onResourceReceived = function (resource) {
-    if (url == resource.url && resource.redirectURL) {
+    if (url === resource.url && resource.redirectURL) {
       redirectURL = resource.redirectURL
     }
   }
@@ -19,7 +20,7 @@ function renderPage(url, userAgent) {
   page.open(url, function (status) {
     if (redirectURL) {
       renderPage(redirectURL, userAgent)
-    } else if (status == 'success') {
+    } else if (status === 'success') {
       console.log(url)
       console.log(page.content)
       phantom.exit(0)
