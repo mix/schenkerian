@@ -18,6 +18,7 @@
     , "before"
     , "after"
     , "noop"
+    , "phantom"
   ]
   , "indent": 2
   , "maxdepth": 6

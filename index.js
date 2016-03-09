@@ -16,17 +16,13 @@ var RE_ALPHA_NUM = /[^\w]/g
 var RE_BAD_TITLES = /&lt;\/?\w+?&gt;/g
 var RE_AMPS = /&amp;/g
 var contentRe = /content=(['"])([^\1]*?)(\1)/
-var request = require('request')
 var TfIdf = require('natural').TfIdf
 var path = require('path')
 var childProcess = require('child_process')
 var phantomjs = require('phantomjs-prebuilt')
 
 var defaultReqOptions = {
-  followAllRedirects: true,
   maxRedirects: 30,
-  pool: { maxSockets: 256 },
-  timeout: 3000,
   'headers': {
     'user-agent': 'Schenkerianbot/1.0 (+https://github.com/mix/schenkerian)'
   }

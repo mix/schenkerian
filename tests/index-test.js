@@ -36,18 +36,6 @@ describe('The analyzer', function () {
     })).to.be.rejectedWith('Some Error')
   })
 
-  it('be rejected when request returns an empty string', function () {
-    var loadStub = sinon.stub()
-    subject = proxy('../', {
-      'request': loadStub
-    })
-
-    loadStub.callsArgWith(1, null, {statusCode: 200}, '')
-    return expect(subject({
-      url: 'http://dustindiaz.com'
-    })).to.be.rejectedWith('Webpage could not resolve')
-  })
-
   it('should work on a webpage', function () {
     return subject({
       url: 'http://dustindiaz.com'
