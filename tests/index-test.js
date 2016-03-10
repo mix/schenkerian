@@ -16,7 +16,7 @@ describe('The analyzer', function () {
 
     loadStub.throws(new Error('Some Error'))
     return expect(subject({
-      url: 'http://dustindiaz.com'
+      url: 'http://mix.com'
     })).to.be.rejectedWith('Some Error')
   })
 
@@ -32,29 +32,19 @@ describe('The analyzer', function () {
 
     loadStub.throws(new Error('Some Error'))
     return expect(subject({
-      url: 'http://dustindiaz.com'
+      url: 'http://mix.com'
     })).to.be.rejectedWith('Some Error')
-  })
-
-  it('be rejected when request returns an empty string', function () {
-    var loadStub = sinon.stub()
-    subject = proxy('../', {
-      'request': loadStub
-    })
-
-    loadStub.callsArgWith(1, null, {statusCode: 200}, '')
-    return expect(subject({
-      url: 'http://dustindiaz.com'
-    })).to.be.rejectedWith('Webpage could not resolve')
   })
 
   it('should work on a webpage', function () {
     return subject({
-      url: 'http://dustindiaz.com'
+      url: 'http://mix.com'
     })
     .then(function (response) {
       return when.all([
-        expect(response.title).to.equal('Dustin Diaz'),
+        expect(response.title).to.equal('Discover, collect, and discuss the best of the web'),
+        expect(response.description).to.equal('Connecting the curious & creative.'),
+        expect(response.image).to.exist,
         expect(response.pagerank).to.equal(0)
       ])
     })
@@ -62,14 +52,14 @@ describe('The analyzer', function () {
 
   it('should work on a webpage when given an agent', function () {
     return subject({
-      url: 'http://dustindiaz.com',
+      url: 'http://mix.com',
       agent: {
         agentClass: http.Agent
       }
     })
     .then(function (response) {
       return when.all([
-        expect(response.title).to.equal('Dustin Diaz'),
+        expect(response.title).to.equal('Discover, collect, and discuss the best of the web'),
         expect(response.pagerank).to.equal(0)
       ])
     })
@@ -77,8 +67,8 @@ describe('The analyzer', function () {
 
   it('should work when given a body', function () {
     return subject({
-      url: 'http://dustindiaz.com',
-      body: '<html><title>something fun</title><body></body></html>'
+      url: 'http://mix.com',
+      body: '<html><head><title>something fun</title></head>head><body></body></html>'
     })
     .then(function (response) {
       return expect(response.title).to.equal('something fun')
@@ -87,35 +77,42 @@ describe('The analyzer', function () {
 
   it('returns a pagerank when required', function () {
     return subject({
-      url: 'http://dustindiaz.com',
+      url: 'http://mix.com',
       pagerank: true
     })
     .then(function (response) {
       return when.all([
-        expect(response.title).to.equal('Dustin Diaz'),
-        expect(response.pagerank).to.equal(5)
+        expect(response.title).to.equal('Discover, collect, and discuss the best of the web'),
+        expect(response.pagerank).to.equal(1)
       ])
     })
   })
 
   it('returns the source content when required', function () {
     return subject({
-      url: 'http://dustindiaz.com',
+      url: 'http://mix.com',
       returnSource: true
     })
     .then(function (response) {
       return when.all([
-        expect(response.title).to.equal('Dustin Diaz'),
+        expect(response.title).to.equal('Discover, collect, and discuss the best of the web'),
         expect(response.source).to.exist,
-        expect(response.source).to.contain('dustin diaz')
+        expect(response.source).to.contain('Mix')
       ])
     })
   })
 
+  it('rejects no head element exists', function () {
+    return expect(subject({
+      url: 'http://mix.com',
+      body: '<html><title>something fun</title></html>'
+    })).to.be.rejectedWith('Timed out trying to get head element')
+  })
+
   it('rejects no body element exists', function () {
     return expect(subject({
-      url: 'http://dustindiaz.com',
-      body: '<html><title>something fun</title></html>'
+      url: 'http://mix.com',
+      body: '<html><head></head><title>something fun</title></head></html>'
     })).to.be.rejectedWith('Timed out trying to get body element')
   })
 })
