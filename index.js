@@ -26,7 +26,7 @@ var defaultReqOptions = {
   }
 }
 
-var commonWordsArray = require('yamljs').load(__dirname + '/common-words.yaml').words
+var commonWordsArray = require('yamljs').load(path.join(__dirname, 'common-words.yaml')).words
 
 commonWordsArray.forEach(function commonWordAdd(w) {
   commonWords[w] = 1
