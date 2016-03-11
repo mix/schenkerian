@@ -19,7 +19,7 @@ var childProcess = require('child_process')
 var phantomjs = require('phantomjs-prebuilt')
 
 var defaultReqOptions = {
-  timeout: 3000,
+  timeout: 5000,
   maxRedirects: 30,
   'headers': {
     'user-agent': 'Schenkerianbot/1.0 (+https://github.com/mix/schenkerian)'
