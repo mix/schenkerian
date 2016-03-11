@@ -14,12 +14,12 @@ function renderPage(url) {
   page.settings.resourceTimeout = timeout
 
   page.onError = function (msg, trace) {
-    console.log('Failed to retrieve url[' + url + '] : ' + msg)
-    phantom.exit(1)
+    // do nothing
   }
 
   page.onResourceTimeout = function (request) {
-    console.log('Timed out retrieving url[' + url + '] : ' + JSON.stringify(request))
+    console.log('Timed out retrieving url[' + url + '] for originalUrl[' + originalUrl + ']: ' +
+      JSON.stringify(request))
     phantom.exit(1)
   }
 
@@ -42,7 +42,7 @@ function renderPage(url) {
       console.log(page.content)
       phantom.exit(0)
     } else {
-      console.error('Received non-success status: ' + status)
+      console.log('Received non-success status[' + status + '] for url[' + url + '] from originalUrl: '+ originalUrl)
       phantom.exit(1)
     }
   })
