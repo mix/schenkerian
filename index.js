@@ -15,7 +15,8 @@ var RE_BAD_TITLES = /&lt;\/?\w+?&gt;/g
 var RE_AMPS = /&amp;/g
 var TfIdf = require('natural').TfIdf
 var path = require('path')
-var childProcess = require('child_process')
+var spawn = require('child_process').spawn
+
 var phantomjs = require('phantomjs-prebuilt')
 
 var defaultReqOptions = {
@@ -38,31 +39,41 @@ module.exports = function _export(options) {
   if (options.body) {
     return sendToAnalyze(url, options.body, pagerank)
   } else {
-    return requestAndSendToAnalyze(url, pagerank, options.returnSource, options.agent)
+    return requestAndSendToAnalyze(url, {
+      pagerank: pagerank,
+      returnSource: options.returnSource,
+      agent: options.agent,
+      timeout: options.timeout
+    })
   }
 }
 
-function requestAndSendToAnalyze(url, prOption, returnSource, agentOptions) {
-  var requestOptions = {url: url}
-  if (agentOptions) {
-    requestOptions.agentClass = agentOptions.agentClass
+function requestAndSendToAnalyze(url, options) {
+  var requestOptions = {
+    url: url,
+    timeout: options.timeout
+  }
+  if (options.agent) {
+    requestOptions.agentClass = options.agent.agentClass
     requestOptions.agentOptions = {
-      socksHost: agentOptions.socksHost,
-      socksPort: agentOptions.socksPort
+      socksHost: options.agent.socksHost,
+      socksPort: options.agent.socksPort
     }
   }
 
   var endUrl
-  return renderPage(url, _.merge(requestOptions, defaultReqOptions))
+  return renderPage(url, _.defaults(requestOptions, defaultReqOptions))
   .then(function (results) {
     endUrl = results.url
-    return sendToAnalyze(endUrl, results.body, prOption, returnSource)
+    return sendToAnalyze(endUrl, results.body, options.pagerank, options.returnSource)
   })
   .then(function (res) {
     return _.merge({url: endUrl}, res)
   })
 }
 function renderPage(url, options) {
+  var child, output = []
+
   return when.promise(function promise(resolve, reject) {
     var childArgs = ['--ignore-ssl-errors=true']
     if (options.agentOptions) {
@@ -76,11 +87,31 @@ function renderPage(url, options) {
       options.timeout
     ])
 
-    childProcess.execFile(phantomjs.path, childArgs, function(err, stdout, stderr) {
-      var output = stdout ? stdout.split('\n') : []
-      if (err && err.code === 1) reject(new Error(stdout))
-      else resolve({url: output[0], body: output.slice(1).join('')})
+    child = spawn(phantomjs.path, childArgs)
+
+    child.stdout.on('data', function(stdout) {
+      output.push(stdout.toString().trim())
     })
+
+    child.on('close', function (exitCode) {
+      if (exitCode === 0) {
+        resolve({url: output[0], body: output.slice(1).join('')})
+      } else {
+        reject(new Error(output.join('') || 'Error occurred scraping ' + url))
+      }
+      child = null
+    })
+
+    child.on('error', function (err) {
+      reject(err)
+    })
+
+    setTimeout(function () {
+      if (child) {
+        child.kill()
+        reject(new Error('Process timed out retrieving url[' + url + ']'))
+      }
+    }, options.timeout + 1000)
   })
 }
 
@@ -166,17 +197,18 @@ function gatherMetaData(url, body) {
     var cheerioBody = cheerio(parsedBody)
     var title
     cheerioBody.find('meta[property="og:title"], meta[property="twitter:title"]').each(function (i, elem) {
-      if (!title) title = cheerio(elem).attr('content').trim()
+      if (!title) title = cheerio(elem).attr('content')
     })
     if (!title) {
       cheerioBody.find('title').each(function (i, elem) {
-        title = cheerio(elem).text().trim()
+        title = cheerio(elem).text()
       })
     }
 
     var image
     cheerioBody.find('meta[property="og:image"], meta[property="twitter:image:src"]').each(function (i, elem) {
-      if (!image) image = cheerio(elem).attr('content').trim()
+      var elemContent = cheerio(elem).attr('content')
+      if (!image) image = elemContent && elemContent.trim()
     })
     if (image) {
       var host = Url.parse(url).host
@@ -188,11 +220,12 @@ function gatherMetaData(url, body) {
 
     var description
     cheerioBody.find('meta[property="og:description"]').each(function (i, elem) {
-      description = cheerio(elem).attr('content').trim()
+      var elemContent = cheerio(elem).attr('content')
+      description = elemContent && elemContent.trim()
     })
 
     return {
-      title: title || 'Untitled',
+      title: (title && title.trim()) || 'Untitled',
       image: image,
       description: description
     }

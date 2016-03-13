@@ -115,4 +115,11 @@ describe('The analyzer', function () {
       body: '<html><head></head><title>something fun</title></head></html>'
     })).to.be.rejectedWith('Timed out trying to get body element')
   })
+
+  it('rejects when the page times out', function () {
+    return expect(subject({
+      url: 'http://mix.com',
+      timeout: 1
+    })).to.be.rejectedWith('out retrieving url')
+  })
 })

@@ -18,7 +18,7 @@ function renderPage(url) {
   }
 
   page.onResourceTimeout = function (request) {
-    console.log('Timed out retrieving url[' + url + '] for originalUrl[' + originalUrl + ']: ' +
+    console.error('Timed out retrieving url[' + url + '] for originalUrl[' + originalUrl + ']: ' +
       JSON.stringify(request))
     phantom.exit(1)
   }
@@ -27,7 +27,7 @@ function renderPage(url) {
     if (url === resource.url && resource.redirectURL) {
       redirectURL = resource.redirectURL
       if (maxRedirects === 0) {
-        console.log('Max Redirects reached for ' + originalUrl)
+        console.error('Max Redirects reached for ' + originalUrl)
         phantom.exit(1)
       }
       maxRedirects--
@@ -42,11 +42,10 @@ function renderPage(url) {
       console.log(page.content)
       phantom.exit(0)
     } else {
-      console.log('Received non-success status[' + status + '] for url[' + url + '] from originalUrl: '+ originalUrl)
+      console.error('Received non-success status[' + status + '] for url[' + url + '] from originalUrl: '+ originalUrl)
       phantom.exit(1)
     }
   })
 }
-
 
 renderPage(originalUrl)
