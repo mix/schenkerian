@@ -109,7 +109,7 @@ function renderPage(url, options) {
     setTimeout(function () {
       if (child) {
         child.kill()
-        reject(new Error('Process timed out retrieving url[' + url + ']'))
+        reject(new Error('Process exceeded timeout of ' + (options.timeout + 1000) + 'ms retrieving url[' + url + ']'))
       }
     }, options.timeout + 1000)
   })

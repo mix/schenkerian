@@ -120,6 +120,6 @@ describe('The analyzer', function () {
     return expect(subject({
       url: 'http://mix.com',
       timeout: 1
-    })).to.be.rejectedWith('out retrieving url')
+    })).to.be.rejectedWith('ms retrieving url')
   })
 })
