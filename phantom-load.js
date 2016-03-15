@@ -18,7 +18,7 @@ function renderPage(url) {
   }
 
   page.onResourceTimeout = function (request) {
-    console.error('Timed out retrieving url[' + url + '] for originalUrl[' + originalUrl + ']: ' +
+    console.error('Exceeded timeout of ' + timeout + 'ms retrieving url[' + url + '] for originalUrl[' + originalUrl + ']: ' +
       JSON.stringify(request))
     phantom.exit(1)
   }
