@@ -216,6 +216,7 @@ function gatherMetaData(url, body) {
         image = 'http://' + host + '/' + image
       }
       if ((/^\/\//).test(image)) image = 'http:' + image
+      image = image.replace(RE_AMPS, '&')
     }
 
     var description
@@ -300,7 +301,7 @@ function cleanBody(body) {
 
   return parseDom(body, 'body', removeSelectors.join(','))
   .then(function (parsedBody) {
-    return cheerio(parsedBody).text()
+    return cheerio(parsedBody).text().replace(RE_SPACES, ' ')
   })
 }
 
