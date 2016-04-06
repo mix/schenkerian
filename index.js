@@ -75,7 +75,10 @@ function renderPage(url, options) {
   var child, output = []
 
   return when.promise(function promise(resolve, reject) {
-    var childArgs = ['--ignore-ssl-errors=true']
+    var childArgs = [
+      '--ignore-ssl-errors=true',
+      '--load-images=false'
+    ]
     if (options.agentOptions) {
       childArgs.push('--proxy=' + options.agentOptions.socksHost + ':' + options.agentOptions.socksPort)
     }
