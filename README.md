@@ -19,8 +19,7 @@ var analyze = require('schenkerian')
 
 analyze({
   url: 'http://dustindiaz.com',
-  body: '<html>...</html>', // optional. if absent, the module will `request` the given webpage
-  pagerank: false // optional
+  body: '<html>...</html>' // optional. if absent, the module will `request` the given webpage
 })
 .then(function (result) {
   console.log(result)
@@ -30,7 +29,6 @@ analyze({
 ### output
 ``` json
 {
-"pagerank": 5,
 "totalWords": 637,
 "permalink": "http://dustindiaz.com/",
 "title": "Dustin Diaz",

@@ -44,8 +44,7 @@ describe('The analyzer', function () {
       return when.all([
         expect(response.title).to.equal('Discover, collect, and discuss the best of the web'),
         expect(response.description).to.equal('Connecting the curious & creative.'),
-        expect(response.image).to.exist,
-        expect(response.pagerank).to.equal(0)
+        expect(response.image).to.exist
       ])
     })
   })
@@ -58,10 +57,7 @@ describe('The analyzer', function () {
       }
     })
     .then(function (response) {
-      return when.all([
-        expect(response.title).to.equal('Discover, collect, and discuss the best of the web'),
-        expect(response.pagerank).to.equal(0)
-      ])
+      return expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
     })
   })
 
@@ -72,19 +68,6 @@ describe('The analyzer', function () {
     })
     .then(function (response) {
       return expect(response.title).to.equal('something fun')
-    })
-  })
-
-  it('returns a pagerank when required', function () {
-    return subject({
-      url: 'http://mix.com',
-      pagerank: true
-    })
-    .then(function (response) {
-      return when.all([
-        expect(response.title).to.equal('Discover, collect, and discuss the best of the web'),
-        expect(response.pagerank).to.equal(1)
-      ])
     })
   })
 

@@ -1,5 +1,4 @@
 var _ = require('lodash')
-var pagerank = require('./pr')
 var Url = require('url')
 var commonWords = {}
 var gramophone = require('gramophone')
@@ -35,12 +34,10 @@ commonWordsArray.forEach(function commonWordAdd(w) {
 
 module.exports = function _export(options) {
   var url = options.url
-  var pagerank = options.pagerank || false
   if (options.body) {
-    return sendToAnalyze(url, options.body, pagerank)
+    return analyze(url, options.body)
   } else {
     return requestAndSendToAnalyze(url, {
-      pagerank: pagerank,
       returnSource: options.returnSource,
       agent: options.agent,
       timeout: options.timeout
@@ -65,7 +62,7 @@ function requestAndSendToAnalyze(url, options) {
   return renderPage(url, _.defaults(requestOptions, defaultReqOptions))
   .then(function (results) {
     endUrl = results.url
-    return sendToAnalyze(endUrl, results.body, options.pagerank, options.returnSource)
+    return analyze(endUrl, results.body, options.returnSource)
   })
   .then(function (res) {
     return _.merge({url: endUrl}, res)
@@ -118,26 +115,7 @@ function renderPage(url, options) {
   })
 }
 
-function sendToAnalyze (url, bodyOption, callPR, returnSource) {
-  return getPageRank(url, callPR)
-  .then(function (pr) {
-    return analyze(url, bodyOption, pr, returnSource)
-    .then(function (res) {
-      return _.merge({pagerank: pr}, res)
-    })
-  })
-}
-
-function getPageRank(url, prOption) {
-  return when.promise(function promise(resolve, reject) {
-    if (prOption === false) return resolve(0)
-    var host = Url.parse(url).host
-    pagerank.get(host, resolve)
-  })
-}
-
-function analyze(url, body, pr, returnSource) {
-  pr = pr || 5
+function analyze(url, body, returnSource) {
   var promises = [cleanBody.bind(null, body)]
   if (!returnSource) promises.push(removeCommonWords)
   return when.all([
