@@ -106,6 +106,13 @@ function renderPage(url, options) {
       reject(err)
     })
 
+    process.on('SIGTERM', function () {
+      if (child) {
+        child.kill()
+        reject(new Error('Process terminated. Canceling child process retrieving url[' + url + ']'))
+      }
+    })
+
     setTimeout(function () {
       if (child) {
         child.kill()
