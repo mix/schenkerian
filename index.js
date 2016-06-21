@@ -21,9 +21,7 @@ var phantomjs = require('phantomjs-prebuilt')
 var defaultReqOptions = {
   timeout: 5000,
   maxRedirects: 30,
-  'headers': {
-    'user-agent': 'Schenkerianbot/1.0 (+https://github.com/mix/schenkerian)'
-  }
+  userAgent: 'Schenkerianbot/1.0 (+https://github.com/mix/schenkerian)'
 }
 
 var commonWordsArray = require('yamljs').load(path.join(__dirname, 'common-words.yaml')).words
@@ -48,7 +46,8 @@ module.exports = function _export(options) {
 function requestAndSendToAnalyze(url, options) {
   var requestOptions = {
     url: url,
-    timeout: options.timeout
+    timeout: options.timeout,
+    userAgent: options.userAgent
   }
   if (options.agent) {
     requestOptions.agentClass = options.agent.agentClass
@@ -82,7 +81,7 @@ function renderPage(url, options) {
     childArgs = childArgs.concat([
       path.join(__dirname, 'phantom-load.js'),
       url,
-      options.headers['user-agent'],
+      options.userAgent,
       options.maxRedirects,
       options.timeout
     ])
