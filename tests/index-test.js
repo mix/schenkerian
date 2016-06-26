@@ -1,6 +1,5 @@
 var proxy = require('proxyquire')
 var http = require('http')
-var when = require('when')
 
 describe('The analyzer', function () {
   var subject
@@ -41,11 +40,10 @@ describe('The analyzer', function () {
       url: 'http://mix.com'
     })
     .then(function (response) {
-      return when.all([
-        expect(response.title).to.equal('Discover, collect, and discuss the best of the web'),
-        expect(response.description).to.equal('Connecting the curious & creative.'),
-        expect(response.image).to.exist
-      ])
+      expect(response.url).to.equal('http://mix.com')
+      expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+      expect(response.description).to.equal('Connecting the curious & creative.')
+      expect(response.image).to.exist
     })
   })
 
@@ -77,11 +75,9 @@ describe('The analyzer', function () {
       returnSource: true
     })
     .then(function (response) {
-      return when.all([
-        expect(response.title).to.equal('Discover, collect, and discuss the best of the web'),
-        expect(response.source).to.exist,
-        expect(response.source).to.contain('Mix')
-      ])
+      expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+      expect(response.source).to.exist
+      expect(response.source).to.contain('Mix')
     })
   })
 
