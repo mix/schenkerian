@@ -96,7 +96,8 @@ function renderPage(url, options) {
       if (exitCode === 0) {
         resolve({url: output[0], body: output.slice(1).join('')})
       } else {
-        reject(new Error(output.join('') || 'Error occurred scraping ' + url))
+        if ((/\[error\]/i).test(output)) reject(new Error(output.join('')))
+        else reject(new Error('Error occurred scraping ' + url))
       }
       child = null
     })
