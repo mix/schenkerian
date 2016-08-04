@@ -23,7 +23,7 @@
     "natural": "^0.4.0",
     "pagerank": "^2.0.0",
     "phantomjs-prebuilt": "^2.1.5",
-    "request": "^2.63.0",
+    "request": "^2.73.0",
     "when": "^3.5.0",
     "yamljs": "^0.2.4"
   },
