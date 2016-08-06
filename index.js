@@ -343,7 +343,7 @@ function requestPage(requestOptions) {
 
   return when.promise(function (resolve, reject) {
     return request(_.merge(requestOptions, reqDefaultOptions), function reqCallback(err, res, body) {
-      if (err || res.statusCode != '200' || !body) return reject(new Error('Webpage could not resolve'))
+      if (err || res.statusCode !== 200 || !body) return reject(new Error('Webpage could not resolve'))
       var endUrl = res.request.uri.href
       resolve({url: endUrl, body: body})
     })
