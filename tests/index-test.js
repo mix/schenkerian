@@ -101,4 +101,15 @@ describe('The analyzer', function () {
       timeout: 1
     })).to.be.rejectedWith('1ms retrieving url')
   })
+
+  it('loads the webpage via request if phantom fails', function () {
+    return subject({
+      url: 'http://mix.com',
+      timeout: 1000,
+      fallbackRequest: true
+    })
+    .then(function (response) {
+      expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+    })
+  })
 })
