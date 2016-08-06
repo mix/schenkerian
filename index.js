@@ -15,6 +15,7 @@ var RE_AMPS = /&amp;/g
 var TfIdf = require('natural').TfIdf
 var path = require('path')
 var spawn = require('child_process').spawn
+var request = require('request')
 
 var phantomjs = require('phantomjs-prebuilt')
 
@@ -35,11 +36,7 @@ module.exports = function _export(options) {
   if (options.body) {
     return analyze(url, options.body)
   } else {
-    return requestAndSendToAnalyze(url, {
-      returnSource: options.returnSource,
-      agent: options.agent,
-      timeout: options.timeout
-    })
+    return requestAndSendToAnalyze(url, options)
   }
 }
 
@@ -47,7 +44,8 @@ function requestAndSendToAnalyze(url, options) {
   var requestOptions = {
     url: url,
     timeout: options.timeout,
-    userAgent: options.userAgent
+    userAgent: options.userAgent,
+    fallbackRequest: options.fallbackRequest
   }
   if (options.agent) {
     requestOptions.agentClass = options.agent.agentClass
@@ -67,6 +65,7 @@ function requestAndSendToAnalyze(url, options) {
     return _.merge({url: endUrl}, res)
   })
 }
+
 function renderPage(url, options) {
   var child, output = []
 
@@ -119,6 +118,10 @@ function renderPage(url, options) {
         reject(new Error('Process exceeded timeout of ' + (options.timeout + 1000) + 'ms retrieving url[' + url + ']'))
       }
     }, options.timeout + 1000)
+  })
+  .catch(function (err) {
+    if (options.fallbackRequest) return requestPage(_.merge({url: url}, options))
+    throw err
   })
 }
 
@@ -311,6 +314,7 @@ function parseDom(body, elementSelector, removeSelector) {
     })
   }).timeout(1000, 'Timed out trying to get ' + elementSelector + ' element')
 }
+
 function removeCommonWords(bodyText) {
   return when.promise(function (resolve, reject) {
     var content = bodyText.replace(RE_ALPHA_NUM, ' ')
@@ -325,5 +329,23 @@ function removeCommonWords(bodyText) {
       .join(' ')
       .replace(RE_SPACES, ' ')
     )
+  })
+}
+
+function requestPage(requestOptions) {
+  var reqDefaultOptions = {
+    followAllRedirects: true,
+    pool: { maxSockets: 256 },
+    'headers': {
+      'user-agent': requestOptions.userAgent || defaultReqOptions.userAgent
+    }
+  }
+
+  return when.promise(function (resolve, reject) {
+    return request(_.merge(requestOptions, reqDefaultOptions), function reqCallback(err, res, body) {
+      if (err || res.statusCode !== 200 || !body) return reject(new Error('Webpage could not resolve'))
+      var endUrl = res.request.uri.href
+      resolve({url: endUrl, body: body})
+    })
   })
 }
