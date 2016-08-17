@@ -135,32 +135,29 @@ function analyze(url, body, returnSource) {
   .then(function (data) {
     var things = data[0]
     var content = data[1]
-    var results = {}
-    if (returnSource) {
-      results = { source: content }
-    } else {
-      var graph = gramophone.extract([things.title, content].join(' '), {
-        score: true,
-        stopWords: commonWordsArray,
-        stem: true,
-        limit: 20
-      })
-      var tfidf = new TfIdf()
-      tfidf.addDocument([things.title, content].join(' '))
-      var tfGraph = graph.map(function (item) {
-        item.score = tfidf.tfidf(item.term, 0)
-        return item
-      })
-      tfGraph = _.filter(tfGraph, function (item) {
-        return item.term !== ''
-      })
+    var graph = gramophone.extract([things.title, content].join(' '), {
+      score: true,
+      stopWords: commonWordsArray,
+      stem: true,
+      limit: 20
+    })
+    var tfidf = new TfIdf()
+    tfidf.addDocument([things.title, content].join(' '))
+    var tfGraph = graph.map(function (item) {
+      item.score = tfidf.tfidf(item.term, 0)
+      return item
+    })
+    tfGraph = _.filter(tfGraph, function (item) {
+      return item.term !== ''
+    })
 
-      results = {
-        totalWords: content.split(' ').length,
-        relevance: tfGraph
-      }
+    var results = {
+      totalWords: content.split(' ').length,
+      relevance: tfGraph
     }
-
+    if (returnSource) {
+      results.source = body
+    }
     return _.merge(results, {
       title: things.title.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&'),
       description: things.description ? things.description.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&') : '',
