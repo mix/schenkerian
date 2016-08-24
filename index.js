@@ -155,14 +155,22 @@ function analyze(url, body, returnSource) {
       totalWords: content.split(' ').length,
       relevance: tfGraph
     }
-    if (returnSource) {
-      results.source = body
-    }
     return _.merge(results, {
       title: things.title.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&'),
       description: things.description ? things.description.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&') : '',
       image: things.image
     })
+  })
+  .then(function (results) {
+    if (returnSource) {
+      return removeScript(body)
+        .then(function (rsBody) {
+          return _.merge(results, {
+            source: rsBody
+          })
+        })
+    }
+    return results
   })
 }
 
@@ -291,6 +299,18 @@ function cleanBody(body) {
   .then(function (parsedBody) {
     return cheerio(parsedBody).text().replace(RE_SPACES, ' ')
   })
+}
+
+function removeScript(body) {
+  var removeSelectors = [
+    'script'
+  , 'style'
+  ]
+
+  return parseDom(body, 'html', removeSelectors.join(','))
+    .then(function (parsedBody) {
+      return cheerio(parsedBody).html().replace(RE_SPACES, ' ')
+    })
 }
 
 function parseDom(body, elementSelector, removeSelector) {
