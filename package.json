@@ -15,7 +15,7 @@
   "author": "Dustin Diaz",
   "license": "MIT",
   "dependencies": {
-    "cheerio": "^0.20.0",
+    "cheerio": "^0.22.0",
     "cornet": "git+https://github.com/mix/node-cornet.git",
     "gramophone": "0.0.3",
     "htmlparser2": "^3.8.2",
