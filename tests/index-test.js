@@ -44,6 +44,20 @@ describe('The analyzer', function () {
       expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
       expect(response.description).to.equal('Connecting the curious & creative.')
       expect(response.image).to.exist
+      expect(response.amphtml).to.not.exist
+      expect(response.canonical).to.not.exist
+    })
+  })
+
+
+
+  it('should be able to get amphtml and canonical url', function () {
+    return subject({
+      url: 'https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/?utm_source=buffer'
+    })
+    .then(function (response) {
+      expect(response.amphtml).to.equal('https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/amp/')
+      expect(response.canonical).to.equal('https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/')
     })
   })
 

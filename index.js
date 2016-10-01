@@ -20,7 +20,7 @@ var request = require('request')
 var phantomjs = require('phantomjs-prebuilt')
 
 var defaultReqOptions = {
-  timeout: 5000,
+  timeout: 6000,
   maxRedirects: 30,
   userAgent: 'Schenkerianbot/1.0 (+https://github.com/mix/schenkerian)'
 }
@@ -158,7 +158,9 @@ function analyze(url, body, returnSource) {
     return _.merge(results, {
       title: things.title.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&'),
       description: things.description ? things.description.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&') : '',
-      image: things.image
+      image: things.image,
+      amphtml: things.amphtml,
+      canonical: things.canonical
     })
   })
   .then(function (results) {
@@ -215,16 +217,23 @@ function gatherMetaData(url, body) {
       image = image.replace(RE_AMPS, '&')
     }
 
-    var description
-    cheerioBody.find('meta[property="og:description"]').each(function (i, elem) {
-      var elemContent = cheerio(elem).attr('content')
-      description = elemContent && elemContent.trim()
-    })
+    var getSimpleValue = function(cheerioTagQuery, targetAttribute) {
+      var foundValue
+
+      cheerioBody.find(cheerioTagQuery).each(function (i, elem) {
+        var elemContent = cheerio(elem).attr(targetAttribute)
+        foundValue = elemContent && elemContent.trim()
+      })
+
+      return foundValue
+    }
 
     return {
       title: (title && title.trim()) || 'Untitled',
       image: image,
-      description: description
+      description: getSimpleValue('meta[property="og:description"]', 'content'),
+      amphtml: getSimpleValue('link[rel="amphtml"]', 'href'),
+      canonical: getSimpleValue('link[rel="canonical"]', 'href')
     }
   })
 }
