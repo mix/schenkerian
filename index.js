@@ -158,7 +158,8 @@ function analyze(url, body, returnSource) {
     return _.merge(results, {
       title: things.title.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&'),
       description: things.description ? things.description.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&') : '',
-      image: things.image
+      image: things.image,
+      amphtml: things.amphtml
     })
   })
   .then(function (results) {
@@ -221,10 +222,17 @@ function gatherMetaData(url, body) {
       description = elemContent && elemContent.trim()
     })
 
+    var amphtml
+    cheerioBody.find('link[rel="amphtml"]').each(function (i, elem) {
+      var elemContent = cheerio(elem).attr('href')
+      amphtml = elemContent && elemContent.trim()
+    })
+
     return {
       title: (title && title.trim()) || 'Untitled',
       image: image,
-      description: description
+      description: description,
+      amphtml: amphtml
     }
   })
 }
