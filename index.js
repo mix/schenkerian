@@ -159,7 +159,8 @@ function analyze(url, body, returnSource) {
       title: things.title.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&'),
       description: things.description ? things.description.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&') : '',
       image: things.image,
-      amphtml: things.amphtml
+      amphtml: things.amphtml,
+      canonical: things.canonical
     })
   })
   .then(function (results) {
@@ -231,7 +232,8 @@ function gatherMetaData(url, body) {
       title: (title && title.trim()) || 'Untitled',
       image: image,
       description: getSimpleValue('meta[property="og:description"]', 'content'),
-      amphtml: getSimpleValue('link[rel="amphtml"]', 'href')
+      amphtml: getSimpleValue('link[rel="amphtml"]', 'href'),
+      canonical: getSimpleValue('link[rel="canonical"]', 'href')
     }
   })
 }
