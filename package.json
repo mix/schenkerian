@@ -15,6 +15,7 @@
   "author": "Dustin Diaz",
   "license": "MIT",
   "dependencies": {
+    "bluebird": "^3.4.7",
     "cheerio": "^0.22.0",
     "cornet": "git+https://github.com/mix/node-cornet.git",
     "gramophone": "0.0.3",
@@ -22,8 +23,6 @@
     "lodash": "^4.0.1",
     "natural": "^0.4.0",
     "phantomjs-prebuilt": "^2.1.5",
-    "request": "^2.74.0",
-    "when": "^3.5.0",
     "yamljs": "^0.2.4"
   },
   "devDependencies": {
