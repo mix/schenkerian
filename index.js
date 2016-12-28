@@ -6,8 +6,7 @@ var Parser = require('htmlparser2').WritableStream
 var Cornet = require('cornet')
 var Readable = require('stream').Readable
 var cheerio = require('cheerio')
-var when = require('when')
-var pipeline = require('when/pipeline')
+var Promise = require('bluebird')
 var RE_SPACES = /\s+/g
 var RE_ALPHA_NUM = /[^\w]/g
 var RE_BAD_TITLES = /&lt;\/?\w+?&gt;/g
@@ -69,7 +68,7 @@ function requestAndSendToAnalyze(url, options) {
 function renderPage(url, options) {
   var child, output = []
 
-  return when.promise(function promise(resolve, reject) {
+  return new Promise(function promise(resolve, reject) {
     var childArgs = [
       '--ignore-ssl-errors=true',
       '--load-images=false'
@@ -126,11 +125,13 @@ function renderPage(url, options) {
 }
 
 function analyze(url, body, returnSource) {
-  var promises = [cleanBody.bind(null, body)]
-  if (!returnSource) promises.push(removeCommonWords)
-  return when.all([
+  return Promise.all([
     gatherMetaData(url, body),
-    pipeline(promises)
+    cleanBody(body)
+    .then(function (result) {
+      if (!returnSource) return removeCommonWords(result)
+      return result
+    })
   ])
   .then(function (data) {
     var things = data[0]
@@ -323,7 +324,7 @@ function removeScript(body) {
 }
 
 function parseDom(body, elementSelector, removeSelector) {
-  return when.promise(function (resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var cornet = new Cornet()
     var stream = new Readable()
 
@@ -342,7 +343,7 @@ function parseDom(body, elementSelector, removeSelector) {
 }
 
 function removeCommonWords(bodyText) {
-  return when.promise(function (resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var content = bodyText.replace(RE_ALPHA_NUM, ' ')
     resolve(
       content.split(' ')
@@ -367,7 +368,7 @@ function requestPage(requestOptions) {
     }
   }
 
-  return when.promise(function (resolve, reject) {
+  return new Promise(function (resolve, reject) {
     return request(_.merge(requestOptions, reqDefaultOptions), function reqCallback(err, res, body) {
       if (err || res.statusCode !== 200 || !body) return reject(new Error('Webpage could not resolve'))
       var endUrl = res.request.uri.href
