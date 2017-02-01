@@ -54,6 +54,17 @@ function requestAndSendToAnalyze(url, options) {
     }
   }
 
+  if (isImage(url)) {
+    return requestPage(_.merge({url: url}, _.defaults(requestOptions, defaultReqOptions)))
+      .then(function (results) {
+        return {
+          url: results.url,
+          title: url,
+          image: url
+        }
+      })
+  }
+
   var endUrl
   return renderPage(url, _.defaults(requestOptions, defaultReqOptions))
   .then(function (results) {
@@ -375,4 +386,8 @@ function requestPage(requestOptions) {
       resolve({url: endUrl, body: body})
     })
   })
+}
+
+function isImage(url) {
+  return /\.(gif|png|svg|ico|mp3|jpg|jpeg)((\?|\&).+)?$/i.test(url)
 }
