@@ -35,7 +35,7 @@ describe('The analyzer', function () {
     })).to.be.rejectedWith('Some Error')
   })
 
-  it('should work on a webpage', function () {
+  it('retrieves analyzed content for a webpage', function () {
     return subject({
       url: 'http://mix.com'
     })
@@ -49,11 +49,10 @@ describe('The analyzer', function () {
     })
   })
 
-
-
-  it('should be able to get amphtml and canonical url', function () {
+  it('retrieves amphtml and canonical url from url', function () {
     return subject({
-      url: 'https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/?utm_source=buffer'
+      url: 'https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/?utm_source=buffer',
+      timeout: 10000
     })
     .then(function (response) {
       expect(response.amphtml).to.equal('https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/amp/')
@@ -61,7 +60,7 @@ describe('The analyzer', function () {
     })
   })
 
-  it('should work on a webpage when given an agent', function () {
+  it('works on a webpage when given an agent', function () {
     return subject({
       url: 'http://mix.com',
       agent: {
@@ -73,7 +72,7 @@ describe('The analyzer', function () {
     })
   })
 
-  it('should work when given a body', function () {
+  it('analyzes given a body', function () {
     return subject({
       url: 'http://mix.com',
       body: '<html><head><title>something fun</title></head>head><body></body></html>'
@@ -93,6 +92,28 @@ describe('The analyzer', function () {
       expect(response.source).to.exist
       expect(response.source).to.contain('Mix')
     })
+  })
+
+  it('returns data for a valid image url', function () {
+    var url = 'https://blogs.scientificamerican.com/blogs/cache/file/D37C6F64-E11B-413B-B4B9D36CF0D7C877.jpg?' +
+      'w=590&h=393&77AB39F8-5374-4AE4-93396577281B788A'
+    return subject({
+      url: url
+    })
+      .then(function (response) {
+        expect(response.url).to.equal(url)
+        expect(response.title).to.equal(url)
+        expect(response.image).to.equal(url)
+        expect(response.description).to.not.exist
+        expect(response.amphtml).to.not.exist
+        expect(response.canonical).to.not.exist
+      })
+  })
+
+  it('404 error causes a rejection', function () {
+    return expect(subject({
+      url: 'https://www.spotify.com/us/404'
+    })).to.be.rejectedWith('[ERROR] Received non-success status[404]')
   })
 
   it('rejects no head element exists', function () {

@@ -26,6 +26,10 @@ var defaultReqOptions = {
 
 var commonWordsArray = require('yamljs').load(path.join(__dirname, 'common-words.yaml')).words
 
+var imageExtensions = ['gif', 'png', 'svg', 'ico', 'jpg', 'jpeg']
+var musicExtensions = ['mp3', 'wav', 'aiff']
+var videoExtensions = ['avi', 'mpg', 'mpeg', 'mp4']
+
 commonWordsArray.forEach(function commonWordAdd(w) {
   commonWords[w] = 1
 })
@@ -52,6 +56,17 @@ function requestAndSendToAnalyze(url, options) {
       socksHost: options.agent.socksHost,
       socksPort: options.agent.socksPort
     }
+  }
+
+  if (isMedia(url)) {
+    return requestPage(_.merge({url: url}, _.defaults(requestOptions, defaultReqOptions)))
+      .then(function (results) {
+        return {
+          url: results.url,
+          title: url,
+          image: url
+        }
+      })
   }
 
   var endUrl
@@ -375,4 +390,10 @@ function requestPage(requestOptions) {
       resolve({url: endUrl, body: body})
     })
   })
+}
+
+function isMedia(url) {
+  var extension = Url.parse(url).pathname.split('.').pop()
+  return imageExtensions.includes(extension) || musicExtensions.includes(extension)
+    || videoExtensions.includes(extension)
 }

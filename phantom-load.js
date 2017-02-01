@@ -30,6 +30,14 @@ function renderPage(url) {
         phantom.exit(1)
       }
       maxRedirects--
+      return
+    }
+
+    // If request to the page is not 200 status, fail.
+    if (resource.url === url && resource.status !== 200) {
+      console.error('[ERROR] Received non-success status[' + resource.status + ']')
+      page.close()
+      phantom.exit(1)
     }
   }
 
