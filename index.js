@@ -36,9 +36,11 @@ commonWordsArray.forEach(function commonWordAdd(w) {
 
 module.exports = function _export(options) {
   var url = options.url
+  var returnSource = false
   if (options.body) {
-    return analyze(url, options.body)
+    return analyze(url, options.body, options.returnSource || returnSource)
   } else {
+    if (options.tokens) _.merge(options, {jar: cookieJar(options.tokens, url)})
     return requestAndSendToAnalyze(url, options)
   }
 }
@@ -48,7 +50,8 @@ function requestAndSendToAnalyze(url, options) {
     url: url,
     timeout: options.timeout,
     userAgent: options.userAgent,
-    fallbackRequest: options.fallbackRequest
+    fallbackRequest: options.fallbackRequest,
+    jar: options.jar
   }
   if (options.agent) {
     requestOptions.agentClass = options.agent.agentClass
@@ -99,6 +102,7 @@ function renderPage(url, options) {
       options.timeout
     ])
 
+    if (options.jar) childArgs.push(JSON.stringify(options.jar))
     child = spawn(phantomjs.path, childArgs)
 
     child.stdout.on('data', function(stdout) {
@@ -396,4 +400,13 @@ function isMedia(url) {
   var extension = Url.parse(url).pathname.split('.').pop()
   return imageExtensions.includes(extension) || musicExtensions.includes(extension)
     || videoExtensions.includes(extension)
+}
+
+function cookieJar(tokens, url) {
+  var j = request.jar()
+  _.forOwn(tokens, function(value, key) {
+    var cookie = request.cookie(key + '=' + value)
+    j.setCookie(cookie, url);
+  })
+  return j
 }
