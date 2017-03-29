@@ -71,6 +71,18 @@ function requestAndSendToAnalyze(url, options) {
       })
   }
 
+  if (options.forceRequest) {
+    return requestPage(_.merge({url: url}, _.defaults(requestOptions, defaultReqOptions)))
+      .then(function (results) {
+        return {
+          url: results.url,
+          title: url,
+          image: url,
+          source: results.body
+        }
+      })
+  }
+
   var endUrl
   return renderPage(url, _.defaults(requestOptions, defaultReqOptions))
   .then(function (results) {
@@ -390,6 +402,7 @@ function requestPage(requestOptions) {
     return request(_.merge(requestOptions, reqDefaultOptions), function reqCallback(err, res, body) {
       if (err || res.statusCode !== 200 || !body) return reject(new Error('Webpage could not resolve'))
       var endUrl = res.request.uri.href
+
       resolve({url: endUrl, body: body})
     })
   })
