@@ -36,9 +36,8 @@ commonWordsArray.forEach(function commonWordAdd(w) {
 
 module.exports = function _export(options) {
   var url = options.url
-  var returnSource = false
   if (options.body) {
-    return analyze(url, options.body, options.returnSource || returnSource)
+    return analyze(url, options.body, options.returnSource)
   } else {
     if (options.tokens) _.merge(options, {jar: cookieJar(options.tokens, url)})
     return requestAndSendToAnalyze(url, options)
