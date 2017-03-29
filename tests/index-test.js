@@ -86,7 +86,6 @@ describe('The analyzer', function () {
   it('works on a webpage via request when given tokens', function () {
     return subject({
       url: 'https://httpbin.org/cookies',
-      // returnSource: true,
       timeout: 1000,
       forceRequest: true,
       tokens: { uid: 'd62d7afa3547f873d4bed44b1eaaa22aa1490732414' }
