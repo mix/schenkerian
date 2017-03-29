@@ -1,3 +1,4 @@
+var _ = require('lodash')
 var system = require('system')
 var phantomWebpage = require('webpage')
 
@@ -5,6 +6,7 @@ var originalUrl = system.args[1]
 var userAgent = system.args[2]
 var maxRedirects = system.args[3]
 var timeout = system.args[4]
+var jar = system.args[5]
 
 function renderPage(url) {
   var page = phantomWebpage.create()
@@ -12,6 +14,8 @@ function renderPage(url) {
 
   page.settings.userAgent = userAgent
   page.settings.resourceTimeout = timeout
+
+  if (jar) setCookies(page, jar)
 
   page.onError = function (msg, trace) {
     // do nothing
@@ -52,6 +56,18 @@ function renderPage(url) {
       console.error('[ERROR] Received non-success status[' + status + '] for url[' + url + '] from originalUrl: '+ originalUrl)
       phantom.exit(1)
     }
+  })
+}
+
+function setCookies(page, jar) {
+  var cookieJar = JSON.parse(jar)
+  var cookies = cookieJar._jar.cookies
+  _.forEach(cookies, function(cookie) {
+    page.addCookie({
+      'name': cookie.key,
+      'value': cookie.value || '',
+      'domain': cookie.domain
+    })
   })
 }
 

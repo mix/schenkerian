@@ -52,7 +52,7 @@ describe('The analyzer', function () {
   it('retrieves amphtml and canonical url from url', function () {
     return subject({
       url: 'https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/?utm_source=buffer',
-      timeout: 10000
+      timeout: 15000
     })
     .then(function (response) {
       expect(response.amphtml).to.equal('https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/amp/')
@@ -69,6 +69,29 @@ describe('The analyzer', function () {
     })
     .then(function (response) {
       return expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+    })
+  })
+
+  it('works on a webpage when given tokens', function () {
+    return subject({
+      url: 'https://httpbin.org/cookies',
+      tokens: { uid: 'd62d7afa3547f873d4bed44b1eaaa22aa1490732414' },
+      returnSource: true
+    })
+    .then(function (response) {
+      expect(response.source).to.contain('d62d7afa3547f873d4bed44b1eaaa22aa1490732414')
+    })
+  })
+
+  it('works on a webpage via request when given tokens', function () {
+    return subject({
+      url: 'https://httpbin.org/cookies',
+      timeout: 1000,
+      forceRequest: true,
+      tokens: { uid: 'd62d7afa3547f873d4bed44b1eaaa22aa1490732414' }
+    })
+    .then(function (response) {
+      expect(response.source).to.contain('d62d7afa3547f873d4bed44b1eaaa22aa1490732414')
     })
   })
 
@@ -112,7 +135,7 @@ describe('The analyzer', function () {
 
   it('404 error causes a rejection', function () {
     return expect(subject({
-      url: 'https://www.spotify.com/us/404'
+      url: 'https://google.com/404'
     })).to.be.rejectedWith('[ERROR] Received non-success status[404]')
   })
 

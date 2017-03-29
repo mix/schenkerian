@@ -37,8 +37,9 @@ commonWordsArray.forEach(function commonWordAdd(w) {
 module.exports = function _export(options) {
   var url = options.url
   if (options.body) {
-    return analyze(url, options.body)
+    return analyze(url, options.body, options.returnSource)
   } else {
+    if (options.tokens) _.merge(options, {jar: cookieJar(options.tokens, url)})
     return requestAndSendToAnalyze(url, options)
   }
 }
@@ -48,7 +49,8 @@ function requestAndSendToAnalyze(url, options) {
     url: url,
     timeout: options.timeout,
     userAgent: options.userAgent,
-    fallbackRequest: options.fallbackRequest
+    fallbackRequest: options.fallbackRequest,
+    jar: options.jar
   }
   if (options.agent) {
     requestOptions.agentClass = options.agent.agentClass
@@ -65,6 +67,18 @@ function requestAndSendToAnalyze(url, options) {
           url: results.url,
           title: url,
           image: url
+        }
+      })
+  }
+
+  if (options.forceRequest) {
+    return requestPage(_.merge({url: url}, _.defaults(requestOptions, defaultReqOptions)))
+      .then(function (results) {
+        return {
+          url: results.url,
+          title: url,
+          image: url,
+          source: results.body
         }
       })
   }
@@ -99,6 +113,7 @@ function renderPage(url, options) {
       options.timeout
     ])
 
+    if (options.jar) childArgs.push(JSON.stringify(options.jar))
     child = spawn(phantomjs.path, childArgs)
 
     child.stdout.on('data', function(stdout) {
@@ -387,6 +402,7 @@ function requestPage(requestOptions) {
     return request(_.merge(requestOptions, reqDefaultOptions), function reqCallback(err, res, body) {
       if (err || res.statusCode !== 200 || !body) return reject(new Error('Webpage could not resolve'))
       var endUrl = res.request.uri.href
+
       resolve({url: endUrl, body: body})
     })
   })
@@ -396,4 +412,13 @@ function isMedia(url) {
   var extension = Url.parse(url).pathname.split('.').pop()
   return imageExtensions.includes(extension) || musicExtensions.includes(extension)
     || videoExtensions.includes(extension)
+}
+
+function cookieJar(tokens, url) {
+  var j = request.jar()
+  _.forOwn(tokens, function(value, key) {
+    var cookie = request.cookie(key + '=' + value)
+    j.setCookie(cookie, url);
+  })
+  return j
 }
