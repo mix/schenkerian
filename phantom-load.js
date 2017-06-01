@@ -45,7 +45,7 @@ function renderPage(url) {
     }
   }
 
-  page.open(url, function (status) {
+  page.open(url, {encoding: 'utf-8'}, function (status) {
     if (redirectURL) {
       renderPage(redirectURL)
     } else if (status === 'success') {
