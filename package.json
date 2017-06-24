@@ -23,7 +23,7 @@
     "lodash": "^4.0.1",
     "natural": "^0.5.0",
     "phantomjs-prebuilt": "^2.1.14",
-    "yamljs": "^0.2.4"
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "chai": "^3.3.0",
