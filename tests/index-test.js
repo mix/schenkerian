@@ -49,6 +49,18 @@ describe('The analyzer', function () {
     })
   })
 
+  it('retrieves analyzed content with utf8 encoding', function () {
+    return subject({
+      url: 'https://architizer.com/projects/universite-de-technologie-de-compiegne-utc/',
+      timeout: 15000,
+    })
+    .then(function (response) {
+      expect(response.url).to.equal('https://architizer.com/projects/universite-de-technologie-de-compiegne-utc/')
+      expect(response.title).to.equal('Université de Technologie de Compiègne (UTC)')
+      expect(response.image).to.exist
+    })
+  })
+
   it('retrieves amphtml and canonical url from url', function () {
     return subject({
       url: 'https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/?utm_source=buffer',
