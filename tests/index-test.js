@@ -52,12 +52,10 @@ describe('The analyzer', function () {
   it('retrieves analyzed content with utf8 encoding', function () {
     return subject({
       url: 'https://architizer.com/projects/universite-de-technologie-de-compiegne-utc/',
-      timeout: 15000,
+      body: '<html><head><meta property="og:title" content="Université de Technologie de Compiègne (UTC)"></title></head><body></body></html>'
     })
     .then(function (response) {
-      expect(response.url).to.equal('https://architizer.com/projects/universite-de-technologie-de-compiegne-utc/')
       expect(response.title).to.equal('Université de Technologie de Compiègne (UTC)')
-      expect(response.image).to.exist
     })
   })
 
@@ -110,7 +108,7 @@ describe('The analyzer', function () {
   it('analyzes given a body', function () {
     return subject({
       url: 'http://mix.com',
-      body: '<html><head><title>something fun</title></head>head><body></body></html>'
+      body: '<html><head><title>something fun</title></head><body></body></html>'
     })
     .then(function (response) {
       return expect(response.title).to.equal('something fun')
