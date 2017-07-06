@@ -41,7 +41,7 @@ describe('The analyzer', function () {
     })
     .then(function (response) {
       expect(response.url).to.equal('http://mix.com')
-      expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+      expect(response.title).to.equal('Discover, collect, and share the best of the web')
       expect(response.description).to.equal('Connecting the curious & creative.')
       expect(response.image).to.exist
       expect(response.amphtml).to.not.exist
@@ -80,7 +80,7 @@ describe('The analyzer', function () {
       }
     })
     .then(function (response) {
-      return expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+      return expect(response.title).to.equal('Discover, collect, and share the best of the web')
     })
   })
 
@@ -123,7 +123,7 @@ describe('The analyzer', function () {
       returnSource: true
     })
     .then(function (response) {
-      expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+      expect(response.title).to.equal('Discover, collect, and share the best of the web')
       expect(response.source).to.exist
       expect(response.source).to.contain('Mix')
     })
@@ -179,7 +179,7 @@ describe('The analyzer', function () {
       fallbackRequest: true
     })
     .then(function (response) {
-      expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+      expect(response.title).to.equal('Discover, collect, and share the best of the web')
     })
   })
 })
