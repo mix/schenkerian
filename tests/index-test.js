@@ -41,7 +41,7 @@ describe('The analyzer', function () {
     })
     .then(function (response) {
       expect(response.url).to.equal('http://mix.com')
-      expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+      expect(response.title).to.equal('Discover, collect, and share the best of the web')
       expect(response.description).to.equal('Connecting the curious & creative.')
       expect(response.image).to.exist
       expect(response.amphtml).to.not.exist
@@ -52,12 +52,17 @@ describe('The analyzer', function () {
   it('retrieves analyzed content with utf8 encoding', function () {
     return subject({
       url: 'https://architizer.com/projects/universite-de-technologie-de-compiegne-utc/',
-      timeout: 15000,
+      body: `
+<html>
+  <head>
+    <meta property="og:title" content="Université de Technologie de Compiègne (UTC)">
+  </head>
+  <body></body>
+</html>
+`
     })
     .then(function (response) {
-      expect(response.url).to.equal('https://architizer.com/projects/universite-de-technologie-de-compiegne-utc/')
       expect(response.title).to.equal('Université de Technologie de Compiègne (UTC)')
-      expect(response.image).to.exist
     })
   })
 
@@ -80,7 +85,7 @@ describe('The analyzer', function () {
       }
     })
     .then(function (response) {
-      return expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+      return expect(response.title).to.equal('Discover, collect, and share the best of the web')
     })
   })
 
@@ -110,7 +115,14 @@ describe('The analyzer', function () {
   it('analyzes given a body', function () {
     return subject({
       url: 'http://mix.com',
-      body: '<html><head><title>something fun</title></head>head><body></body></html>'
+      body: `
+<html>
+  <head>
+    <title>something fun</title>
+  </head>
+  <body></body>
+</html>
+`
     })
     .then(function (response) {
       return expect(response.title).to.equal('something fun')
@@ -123,7 +135,7 @@ describe('The analyzer', function () {
       returnSource: true
     })
     .then(function (response) {
-      expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+      expect(response.title).to.equal('Discover, collect, and share the best of the web')
       expect(response.source).to.exist
       expect(response.source).to.contain('Mix')
     })
@@ -179,7 +191,7 @@ describe('The analyzer', function () {
       fallbackRequest: true
     })
     .then(function (response) {
-      expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+      expect(response.title).to.equal('Discover, collect, and share the best of the web')
     })
   })
 })
