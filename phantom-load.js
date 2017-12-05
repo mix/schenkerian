@@ -49,9 +49,11 @@ function renderPage(url) {
     if (redirectURL) {
       renderPage(redirectURL)
     } else if (status === 'success') {
-      console.log(url)
-      console.log(page.content)
-      phantom.exit(0)
+      setTimeout(function () {
+        console.log(url)
+        console.log(page.content)
+        phantom.exit(0)
+      }, 3000)
     } else {
       console.error('[ERROR] Received non-success status[' + status + '] for url[' + url + '] from originalUrl: '+ originalUrl)
       phantom.exit(1)
