@@ -21,7 +21,7 @@
     "gramophone": "0.0.3",
     "htmlparser2": "^3.8.2",
     "lodash": "^4.16.5",
-    "natural": "^0.5.0",
+    "natural": "^0.5.4",
     "phantomjs-prebuilt": "^2.1.14",
     "yamljs": "^0.3.0"
   },
