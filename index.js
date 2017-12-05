@@ -6,8 +6,7 @@ var Parser = require('htmlparser2').WritableStream
 var Cornet = require('cornet')
 var Readable = require('stream').Readable
 var cheerio = require('cheerio')
-var when = require('when')
-var pipeline = require('when/pipeline')
+var Promise = require('bluebird')
 var RE_SPACES = /\s+/g
 var RE_ALPHA_NUM = /[^\w]/g
 var RE_BAD_TITLES = /&lt;\/?\w+?&gt;/g
@@ -27,6 +26,10 @@ var defaultReqOptions = {
 
 var commonWordsArray = require('yamljs').load(path.join(__dirname, 'common-words.yaml')).words
 
+var imageExtensions = ['gif', 'png', 'svg', 'ico', 'jpg', 'jpeg']
+var musicExtensions = ['mp3', 'wav', 'aiff']
+var videoExtensions = ['avi', 'mpg', 'mpeg', 'mp4']
+
 commonWordsArray.forEach(function commonWordAdd(w) {
   commonWords[w] = 1
 })
@@ -34,8 +37,9 @@ commonWordsArray.forEach(function commonWordAdd(w) {
 module.exports = function _export(options) {
   var url = options.url
   if (options.body) {
-    return analyze(url, options.body)
+    return analyze(url, options.body, options.returnSource)
   } else {
+    if (options.tokens) _.merge(options, {jar: cookieJar(options.tokens, url)})
     return requestAndSendToAnalyze(url, options)
   }
 }
@@ -45,7 +49,8 @@ function requestAndSendToAnalyze(url, options) {
     url: url,
     timeout: options.timeout,
     userAgent: options.userAgent,
-    fallbackRequest: options.fallbackRequest
+    fallbackRequest: options.fallbackRequest,
+    jar: options.jar
   }
   if (options.agent) {
     requestOptions.agentClass = options.agent.agentClass
@@ -53,6 +58,29 @@ function requestAndSendToAnalyze(url, options) {
       socksHost: options.agent.socksHost,
       socksPort: options.agent.socksPort
     }
+  }
+
+  if (isMedia(url)) {
+    return requestPage(_.merge({url: url}, _.defaults(requestOptions, defaultReqOptions)))
+      .then(function (results) {
+        return {
+          url: results.url,
+          title: url,
+          image: url
+        }
+      })
+  }
+
+  if (options.forceRequest) {
+    return requestPage(_.merge({url: url}, _.defaults(requestOptions, defaultReqOptions)))
+      .then(function (results) {
+        return {
+          url: results.url,
+          title: url,
+          image: url,
+          source: results.body
+        }
+      })
   }
 
   var endUrl
@@ -69,7 +97,7 @@ function requestAndSendToAnalyze(url, options) {
 function renderPage(url, options) {
   var child, output = []
 
-  return when.promise(function promise(resolve, reject) {
+  return new Promise(function promise(resolve, reject) {
     var childArgs = [
       '--ignore-ssl-errors=true',
       '--load-images=false'
@@ -85,6 +113,7 @@ function renderPage(url, options) {
       options.timeout
     ])
 
+    if (options.jar) childArgs.push(JSON.stringify(options.jar))
     child = spawn(phantomjs.path, childArgs)
 
     child.stdout.on('data', function(stdout) {
@@ -126,11 +155,13 @@ function renderPage(url, options) {
 }
 
 function analyze(url, body, returnSource) {
-  var promises = [cleanBody.bind(null, body)]
-  if (!returnSource) promises.push(removeCommonWords)
-  return when.all([
+  return Promise.all([
     gatherMetaData(url, body),
-    pipeline(promises)
+    cleanBody(body)
+    .then(function (result) {
+      if (!returnSource) return removeCommonWords(result)
+      return result
+    })
   ])
   .then(function (data) {
     var things = data[0]
@@ -323,7 +354,7 @@ function removeScript(body) {
 }
 
 function parseDom(body, elementSelector, removeSelector) {
-  return when.promise(function (resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var cornet = new Cornet()
     var stream = new Readable()
 
@@ -342,7 +373,7 @@ function parseDom(body, elementSelector, removeSelector) {
 }
 
 function removeCommonWords(bodyText) {
-  return when.promise(function (resolve, reject) {
+  return new Promise(function (resolve, reject) {
     var content = bodyText.replace(RE_ALPHA_NUM, ' ')
     resolve(
       content.split(' ')
@@ -367,11 +398,27 @@ function requestPage(requestOptions) {
     }
   }
 
-  return when.promise(function (resolve, reject) {
+  return new Promise(function (resolve, reject) {
     return request(_.merge(requestOptions, reqDefaultOptions), function reqCallback(err, res, body) {
       if (err || res.statusCode !== 200 || !body) return reject(new Error('Webpage could not resolve'))
       var endUrl = res.request.uri.href
+
       resolve({url: endUrl, body: body})
     })
   })
+}
+
+function isMedia(url) {
+  var extension = Url.parse(url).pathname.split('.').pop()
+  return imageExtensions.includes(extension) || musicExtensions.includes(extension)
+    || videoExtensions.includes(extension)
+}
+
+function cookieJar(tokens, url) {
+  var j = request.jar()
+  _.forOwn(tokens, function(value, key) {
+    var cookie = request.cookie(key + '=' + value)
+    j.setCookie(cookie, url);
+  })
+  return j
 }

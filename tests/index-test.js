@@ -35,13 +35,13 @@ describe('The analyzer', function () {
     })).to.be.rejectedWith('Some Error')
   })
 
-  it('should work on a webpage', function () {
+  it('retrieves analyzed content for a webpage', function () {
     return subject({
       url: 'http://mix.com'
     })
     .then(function (response) {
       expect(response.url).to.equal('http://mix.com')
-      expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+      expect(response.title).to.equal('Discover, collect, and share the best of the web')
       expect(response.description).to.equal('Connecting the curious & creative.')
       expect(response.image).to.exist
       expect(response.amphtml).to.not.exist
@@ -49,11 +49,27 @@ describe('The analyzer', function () {
     })
   })
 
-
-
-  it('should be able to get amphtml and canonical url', function () {
+  it('retrieves analyzed content with utf8 encoding', function () {
     return subject({
-      url: 'https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/?utm_source=buffer'
+      url: 'https://architizer.com/projects/universite-de-technologie-de-compiegne-utc/',
+      body: `
+<html>
+  <head>
+    <meta property="og:title" content="Université de Technologie de Compiègne (UTC)">
+  </head>
+  <body></body>
+</html>
+`
+    })
+    .then(function (response) {
+      expect(response.title).to.equal('Université de Technologie de Compiègne (UTC)')
+    })
+  })
+
+  it('retrieves amphtml and canonical url from url', function () {
+    return subject({
+      url: 'https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/?utm_source=buffer',
+      timeout: 15000
     })
     .then(function (response) {
       expect(response.amphtml).to.equal('https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/amp/')
@@ -61,7 +77,7 @@ describe('The analyzer', function () {
     })
   })
 
-  it('should work on a webpage when given an agent', function () {
+  it('works on a webpage when given an agent', function () {
     return subject({
       url: 'http://mix.com',
       agent: {
@@ -69,14 +85,44 @@ describe('The analyzer', function () {
       }
     })
     .then(function (response) {
-      return expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+      return expect(response.title).to.equal('Discover, collect, and share the best of the web')
     })
   })
 
-  it('should work when given a body', function () {
+  it('works on a webpage when given tokens', function () {
+    return subject({
+      url: 'https://httpbin.org/cookies',
+      tokens: { uid: 'd62d7afa3547f873d4bed44b1eaaa22aa1490732414' },
+      returnSource: true
+    })
+    .then(function (response) {
+      expect(response.source).to.contain('d62d7afa3547f873d4bed44b1eaaa22aa1490732414')
+    })
+  })
+
+  it('works on a webpage via request when given tokens', function () {
+    return subject({
+      url: 'https://httpbin.org/cookies',
+      timeout: 1000,
+      forceRequest: true,
+      tokens: { uid: 'd62d7afa3547f873d4bed44b1eaaa22aa1490732414' }
+    })
+    .then(function (response) {
+      expect(response.source).to.contain('d62d7afa3547f873d4bed44b1eaaa22aa1490732414')
+    })
+  })
+
+  it('analyzes given a body', function () {
     return subject({
       url: 'http://mix.com',
-      body: '<html><head><title>something fun</title></head>head><body></body></html>'
+      body: `
+<html>
+  <head>
+    <title>something fun</title>
+  </head>
+  <body></body>
+</html>
+`
     })
     .then(function (response) {
       return expect(response.title).to.equal('something fun')
@@ -89,10 +135,32 @@ describe('The analyzer', function () {
       returnSource: true
     })
     .then(function (response) {
-      expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+      expect(response.title).to.equal('Discover, collect, and share the best of the web')
       expect(response.source).to.exist
       expect(response.source).to.contain('Mix')
     })
+  })
+
+  it('returns data for a valid image url', function () {
+    var url = 'https://blogs.scientificamerican.com/blogs/cache/file/D37C6F64-E11B-413B-B4B9D36CF0D7C877.jpg?' +
+      'w=590&h=393&77AB39F8-5374-4AE4-93396577281B788A'
+    return subject({
+      url: url
+    })
+      .then(function (response) {
+        expect(response.url).to.equal(url)
+        expect(response.title).to.equal(url)
+        expect(response.image).to.equal(url)
+        expect(response.description).to.not.exist
+        expect(response.amphtml).to.not.exist
+        expect(response.canonical).to.not.exist
+      })
+  })
+
+  it('404 error causes a rejection', function () {
+    return expect(subject({
+      url: 'https://google.com/404'
+    })).to.be.rejectedWith('[ERROR] Received non-success status[404]')
   })
 
   it('rejects no head element exists', function () {
@@ -123,7 +191,7 @@ describe('The analyzer', function () {
       fallbackRequest: true
     })
     .then(function (response) {
-      expect(response.title).to.equal('Discover, collect, and discuss the best of the web')
+      expect(response.title).to.equal('Discover, collect, and share the best of the web')
     })
   })
 })
