@@ -1,41 +1,22 @@
-var _ = require('lodash')
-var Url = require('url')
-var commonWords = {}
-var gramophone = require('gramophone')
-var Parser = require('htmlparser2').WritableStream
-var Cornet = require('cornet')
-var Readable = require('stream').Readable
-var cheerio = require('cheerio')
-var Promise = require('bluebird')
-var RE_SPACES = /\s+/g
-var RE_ALPHA_NUM = /[^\w]/g
-var RE_BAD_TITLES = /&lt;\/?\w+?&gt;/g
-var RE_AMPS = /&amp;/g
-var TfIdf = require('natural').TfIdf
-var path = require('path')
-var spawn = require('child_process').spawn
-var request = require('request')
+const _ = require('lodash')
+const Url = require('url')
+const requestPage = require('./lib/request')
+const renderPage = require('./lib/render')
+const cookieJar = require('./lib/cookie')
+const analyze = require('./lib/analyze')
 
-var phantomjs = require('phantomjs-prebuilt')
+const imageExtensions = ['gif', 'png', 'svg', 'ico', 'jpg', 'jpeg']
+const musicExtensions = ['mp3', 'wav', 'aiff']
+const videoExtensions = ['avi', 'mpg', 'mpeg', 'mp4']
 
-var defaultReqOptions = {
+const defaultReqOptions = {
   timeout: 6000,
   maxRedirects: 30,
   userAgent: 'Schenkerianbot/1.0 (+https://github.com/mix/schenkerian)'
 }
 
-var commonWordsArray = require('yamljs').load(path.join(__dirname, 'common-words.yaml')).words
-
-var imageExtensions = ['gif', 'png', 'svg', 'ico', 'jpg', 'jpeg']
-var musicExtensions = ['mp3', 'wav', 'aiff']
-var videoExtensions = ['avi', 'mpg', 'mpeg', 'mp4']
-
-commonWordsArray.forEach(function commonWordAdd(w) {
-  commonWords[w] = 1
-})
-
 module.exports = function _export(options) {
-  var url = options.url
+  let url = options.url
   if (options.body) {
     return analyze(url, options.body, options.returnSource)
   } else {
@@ -45,7 +26,7 @@ module.exports = function _export(options) {
 }
 
 function requestAndSendToAnalyze(url, options) {
-  var requestOptions = {
+  let requestOptions = {
     url: url,
     timeout: options.timeout,
     userAgent: options.userAgent,
@@ -61,364 +42,53 @@ function requestAndSendToAnalyze(url, options) {
   }
 
   if (isMedia(url)) {
-    return requestPage(_.merge({url: url}, _.defaults(requestOptions, defaultReqOptions)))
-      .then(function (results) {
-        return {
-          url: results.url,
-          title: url,
-          image: url
-        }
-      })
+    return requestPage(_.merge({
+      url
+    }, _.defaults(requestOptions, defaultReqOptions)))
+    .then(results => {
+      return {
+        url: results.url,
+        title: url,
+        image: url
+      }
+    })
   }
 
   if (options.forceRequest) {
-    return requestPage(_.merge({url: url}, _.defaults(requestOptions, defaultReqOptions)))
-      .then(function (results) {
-        return {
-          url: results.url,
-          title: url,
-          image: url,
-          source: results.body
-        }
-      })
+    return requestPage(_.merge({
+      url
+    }, _.defaults(requestOptions, defaultReqOptions)))
+    .then(results => {
+      return {
+        url: results.url,
+        title: url,
+        image: url,
+        source: results.body
+      }
+    })
   }
 
-  var endUrl
+  let endUrl
   return renderPage(url, _.defaults(requestOptions, defaultReqOptions))
-  .then(function (results) {
+  .catch(err => {
+    if (options.fallbackRequest) {
+      return requestPage(_.merge({url: url}, options))
+    }
+    throw err
+  })
+  .then(results => {
     endUrl = results.url
     return analyze(endUrl, results.body, options.returnSource)
   })
-  .then(function (res) {
-    return _.merge({url: endUrl}, res)
-  })
-}
-
-function renderPage(url, options) {
-  var child, output = []
-
-  return new Promise(function promise(resolve, reject) {
-    var childArgs = [
-      '--ignore-ssl-errors=true',
-      '--load-images=false'
-    ]
-    if (options.agentOptions) {
-      childArgs.push('--proxy=' + options.agentOptions.socksHost + ':' + options.agentOptions.socksPort)
-    }
-    childArgs = childArgs.concat([
-      path.join(__dirname, 'phantom-load.js'),
-      url,
-      options.userAgent,
-      options.maxRedirects,
-      options.timeout
-    ])
-
-    if (options.jar) childArgs.push(JSON.stringify(options.jar))
-    child = spawn(phantomjs.path, childArgs)
-
-    child.stdout.on('data', function(stdout) {
-      output.push(stdout.toString().trim())
-    })
-
-    child.on('close', function (exitCode) {
-      if (exitCode === 0) {
-        resolve({url: output[0], body: output.slice(1).join('')})
-      } else {
-        if ((/\[error\]/i).test(output)) reject(new Error(output.join('')))
-        else reject(new Error('Error occurred scraping ' + url))
-      }
-      child = null
-    })
-
-    child.on('error', function (err) {
-      reject(err)
-    })
-
-    process.on('exit', function killChild() {
-      if (child) {
-        child.kill()
-        reject(new Error('Process terminated. Canceling child process retrieving url[' + url + ']'))
-      }
-    })
-
-    setTimeout(function () {
-      if (child) {
-        child.kill()
-        reject(new Error('Process exceeded timeout of ' + (options.timeout + 1000) + 'ms retrieving url[' + url + ']'))
-      }
-    }, options.timeout + 1000)
-  })
-  .catch(function (err) {
-    if (options.fallbackRequest) return requestPage(_.merge({url: url}, options))
-    throw err
-  })
-}
-
-function analyze(url, body, returnSource) {
-  return Promise.all([
-    gatherMetaData(url, body),
-    cleanBody(body)
-    .then(function (result) {
-      if (!returnSource) return removeCommonWords(result)
-      return result
-    })
-  ])
-  .then(function (data) {
-    var things = data[0]
-    var content = data[1]
-    var graph = gramophone.extract([things.title, content].join(' '), {
-      score: true,
-      stopWords: commonWordsArray,
-      stem: true,
-      limit: 20
-    })
-    var tfidf = new TfIdf()
-    tfidf.addDocument([things.title, content].join(' '))
-    var tfGraph = graph.map(function (item) {
-      item.score = tfidf.tfidf(item.term, 0)
-      return item
-    })
-    tfGraph = _.filter(tfGraph, function (item) {
-      return item.term !== ''
-    })
-
-    var results = {
-      totalWords: content.split(' ').length,
-      relevance: tfGraph
-    }
-    return _.merge(results, {
-      title: things.title.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&'),
-      description: things.description ? things.description.replace(RE_BAD_TITLES, '').replace(RE_AMPS, '&') : '',
-      image: things.image,
-      amphtml: things.amphtml,
-      canonical: things.canonical
-    })
-  })
-  .then(function (results) {
-    if (returnSource) {
-      return removeScript(body)
-        .then(function (rsBody) {
-          return _.merge(results, {
-            source: rsBody
-          })
-        })
-    }
-    return results
-  })
-}
-
-function gatherMetaData(url, body) {
-  var removeSelectors = [
-    'script'
-  , 'noscript'
-  , 'style'
-  , 'iframe'
-  , 'nav'
-  , 'footer'
-  , 'label'
-  , 'audio'
-  , 'video'
-  , 'aside'
-  ]
-
-  return parseDom(body, 'head', removeSelectors.join(','))
-  .then(function (parsedBody) {
-    var cheerioBody = cheerio(parsedBody)
-    var title
-    cheerioBody.find('meta[property="og:title"], meta[property="twitter:title"]').each(function (i, elem) {
-      if (!title) title = cheerio(elem).attr('content')
-    })
-    if (!title) {
-      cheerioBody.find('title').each(function (i, elem) {
-        title = cheerio(elem).text()
-      })
-    }
-
-    var image
-    cheerioBody.find('meta[property="og:image"], meta[property="twitter:image:src"]').each(function (i, elem) {
-      var elemContent = cheerio(elem).attr('content')
-      if (!image) image = elemContent && elemContent.trim()
-    })
-    if (image) {
-      var host = Url.parse(url).host
-      if (!(/^(http(s)?\:)?\/\//i).test(image) && !(new RegExp(host, 'i')).test(image)) {
-        image = 'http://' + host + '/' + image
-      }
-      if ((/^\/\//).test(image)) image = 'http:' + image
-      image = image.replace(RE_AMPS, '&')
-    }
-
-    var getSimpleValue = function(cheerioTagQuery, targetAttribute) {
-      var foundValue
-
-      cheerioBody.find(cheerioTagQuery).each(function (i, elem) {
-        var elemContent = cheerio(elem).attr(targetAttribute)
-        foundValue = elemContent && elemContent.trim()
-      })
-
-      return foundValue
-    }
-
-    return {
-      title: (title && title.trim()) || 'Untitled',
-      image: image,
-      description: getSimpleValue('meta[property="og:description"]', 'content'),
-      amphtml: getSimpleValue('link[rel="amphtml"]', 'href'),
-      canonical: getSimpleValue('link[rel="canonical"]', 'href')
-    }
-  })
-}
-
-function cleanBody(body) {
-  var removeSelectors = [
-    'head'
-  , 'script'
-  , 'noscript'
-  , 'style'
-  , 'iframe'
-  , 'nav'
-  , 'footer'
-  , 'label'
-  , 'audio'
-  , 'video'
-  , 'aside'
-  , '[class*=google]'
-  , '[id*=google]'
-  , '[class*=facebook]'
-  , '[id*=facebook]'
-  , '[class*=twitter]'
-  , '[id*=twitter]'
-  , '[class*=email]'
-  , '[id*=email]'
-  , '[class*=footer]'
-  , '[id*=footer]'
-  , '[class*=header]'
-  , '[id*=header]'
-  , '[class^=side]'
-  , '[id^=side]'
-  , '[class*=comments]'
-  , '[id*=comments]'
-  , '[class*=share]'
-  , '[id*=share]'
-  , '[class*=social]'
-  , '[id*=social]'
-  , '[class*=nav]'
-  , '[id*=nav]'
-  , '[class*=sponsored]'
-  , '[id*=sponsored]'
-  , '[class*=widget]'
-  , '[id*=widget]'
-  , '[class*=ad]'
-  , '[id*=ad]'
-  , '[class*=promo]'
-  , '[id*=promo]'
-  , '[class*=banner]'
-  , '[id*=banner]'
-  , '[class*=abridged]'
-  , '[id*=abridged]'
-  , '[class*=news]'
-  , '[id*=news]'
-  , '[class*=highlight]'
-  , '[id*=highlight]'
-  , '[class*=copyright]'
-  , '[id*=copyright]'
-  , '[class*=popular]'
-  , '[id*=popular]'
-  , '[class*=prev]'
-  , '[id*=prev]'
-  , '[class*=next]'
-  , '[id*=next]'
-  , '[class^=right]'
-  , '[id^=right]'
-  , '[class*=link]'
-  , '[id*=link]'
-  , '[style*="display: none"]'
-  ]
-
-  return parseDom(body, 'body', removeSelectors.join(','))
-  .then(function (parsedBody) {
-    return cheerio(parsedBody).text().replace(RE_SPACES, ' ')
-  })
-}
-
-function removeScript(body) {
-  var removeSelectors = [
-    'script'
-  , 'style'
-  ]
-
-  return parseDom(body, 'html', removeSelectors.join(','))
-    .then(function (parsedBody) {
-      return cheerio(parsedBody).html().replace(RE_SPACES, ' ')
-    })
-}
-
-function parseDom(body, elementSelector, removeSelector) {
-  return new Promise(function (resolve, reject) {
-    var cornet = new Cornet()
-    var stream = new Readable()
-
-    stream.push(body)
-    stream.push(null)
-
-    stream.pipe(new Parser(cornet))
-    cornet.remove(removeSelector)
-
-    cornet.select(elementSelector, function (parsedBody) {
-      cornet.removeAllListeners()
-      cornet = null
-      resolve(parsedBody)
-    })
-  }).timeout(1000, 'Timed out trying to get ' + elementSelector + ' element')
-}
-
-function removeCommonWords(bodyText) {
-  return new Promise(function (resolve, reject) {
-    var content = bodyText.replace(RE_ALPHA_NUM, ' ')
-    resolve(
-      content.split(' ')
-      .map(function lowerCaseAndTrim(word) {
-        return word.toLowerCase().replace(/[\d'"”<>\/]/g, ' ').trim()
-      })
-      .filter(function commonWordFilter(word) {
-        return !commonWords[word]
-      })
-      .join(' ')
-      .replace(RE_SPACES, ' ')
-    )
-  })
-}
-
-function requestPage(requestOptions) {
-  var reqDefaultOptions = {
-    followAllRedirects: true,
-    pool: { maxSockets: 256 },
-    'headers': {
-      'user-agent': requestOptions.userAgent || defaultReqOptions.userAgent
-    }
-  }
-
-  return new Promise(function (resolve, reject) {
-    return request(_.merge(requestOptions, reqDefaultOptions), function reqCallback(err, res, body) {
-      if (err || res.statusCode !== 200 || !body) return reject(new Error('Webpage could not resolve'))
-      var endUrl = res.request.uri.href
-
-      resolve({url: endUrl, body: body})
-    })
-  })
+  .then(res =>
+    _.merge({
+      url: endUrl
+    }, res)
+  )
 }
 
 function isMedia(url) {
-  var extension = Url.parse(url).pathname.split('.').pop()
+  let extension = Url.parse(url).pathname.split('.').pop()
   return imageExtensions.includes(extension) || musicExtensions.includes(extension)
     || videoExtensions.includes(extension)
-}
-
-function cookieJar(tokens, url) {
-  var j = request.jar()
-  _.forOwn(tokens, function(value, key) {
-    var cookie = request.cookie(key + '=' + value)
-    j.setCookie(cookie, url);
-  })
-  return j
 }

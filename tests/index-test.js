@@ -1,14 +1,15 @@
-var proxy = require('proxyquire')
-var http = require('http')
+const proxy = require('proxyquire')
+const http = require('http')
 
 describe('The analyzer', function () {
-  var subject
+  let subject
   beforeEach(function () {
     subject = require('../')
   })
 
   it('be rejected when parsing with cheerio fails on a webpage', function () {
-    var loadStub = sinon.stub()
+    let loadStub = sinon.stub()
+    loadStub['@global'] = true
     subject = proxy('../', {
       'cheerio': loadStub
     })
@@ -20,13 +21,15 @@ describe('The analyzer', function () {
   })
 
   it('be rejected when cornet fails on a webpage', function () {
-    var loadStub = sinon.stub()
-    subject = proxy('../', {
-      'cornet': function Cornet() {
-        return {
-          remove: loadStub
-        }
+    let loadStub = sinon.stub()
+    let cornetStub = function Cornet() {
+      return {
+        remove: loadStub
       }
+    }
+    cornetStub['@global'] = true
+    subject = proxy('../', {
+      'cornet': cornetStub
     })
 
     loadStub.throws(new Error('Some Error'))
@@ -142,19 +145,19 @@ describe('The analyzer', function () {
   })
 
   it('returns data for a valid image url', function () {
-    var url = 'https://blogs.scientificamerican.com/blogs/cache/file/D37C6F64-E11B-413B-B4B9D36CF0D7C877.jpg?' +
+    let url = 'https://blogs.scientificamerican.com/blogs/cache/file/D37C6F64-E11B-413B-B4B9D36CF0D7C877.jpg?' +
       'w=590&h=393&77AB39F8-5374-4AE4-93396577281B788A'
     return subject({
       url: url
     })
-      .then(function (response) {
-        expect(response.url).to.equal(url)
-        expect(response.title).to.equal(url)
-        expect(response.image).to.equal(url)
-        expect(response.description).to.not.exist
-        expect(response.amphtml).to.not.exist
-        expect(response.canonical).to.not.exist
-      })
+    .then(function (response) {
+      expect(response.url).to.equal(url)
+      expect(response.title).to.equal(url)
+      expect(response.image).to.equal(url)
+      expect(response.description).to.not.exist
+      expect(response.amphtml).to.not.exist
+      expect(response.canonical).to.not.exist
+    })
   })
 
   it('404 error causes a rejection', function () {
