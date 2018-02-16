@@ -1,8 +1,9 @@
 const _ = require('lodash')
 const Url = require('url')
 const requestPage = require('./lib/request')
-const renderPage = require('./lib/render')
-const cookieJar = require('./lib/cookie')
+const renderPagePhantom = require('./lib/render-phantom')
+const renderPageChrome = require('./lib/render-chrome')
+const cookie = require('./lib/cookie')
 const analyze = require('./lib/analyze')
 
 const imageExtensions = ['gif', 'png', 'svg', 'ico', 'jpg', 'jpeg']
@@ -17,22 +18,30 @@ const defaultReqOptions = {
 
 module.exports = function _export(options) {
   let url = options.url
+  if (options.tokens) {
+    _.merge(options, {
+      jar: cookie.jar(options.tokens, url),
+      cookies: cookie.chromeCookies(options.tokens, url)
+    })
+  }
+
   if (options.body) {
     return analyze(url, options.body, options.returnSource)
-  } else {
-    if (options.tokens) _.merge(options, {jar: cookieJar(options.tokens, url)})
-    return requestAndSendToAnalyze(url, options)
   }
+
+  return requestAndSendToAnalyze(url, options)
 }
 
 function requestAndSendToAnalyze(url, options) {
-  let requestOptions = {
-    url: url,
-    timeout: options.timeout,
-    userAgent: options.userAgent,
-    fallbackRequest: options.fallbackRequest,
-    jar: options.jar
-  }
+  let requestOptions = _.merge({
+    url
+  }, _.pick(options, [
+    'timeout',
+    'userAgent',
+    'fallbackRequest',
+    'jar',
+    'cookies'
+  ]))
   if (options.agent) {
     requestOptions.agentClass = options.agent.agentClass
     requestOptions.agentOptions = {
@@ -69,7 +78,13 @@ function requestAndSendToAnalyze(url, options) {
   }
 
   let endUrl
-  return renderPage(url, _.defaults(requestOptions, defaultReqOptions))
+  let promise
+  if (options.phantom) {
+    promise = renderPagePhantom(url, _.defaults(requestOptions, defaultReqOptions))
+  } else {
+    promise = renderPageChrome(url, _.defaults(requestOptions, defaultReqOptions))
+  }
+  return promise
   .catch(err => {
     if (options.fallbackRequest) {
       return requestPage(_.merge({url: url}, options))
@@ -78,6 +93,9 @@ function requestAndSendToAnalyze(url, options) {
   })
   .then(results => {
     endUrl = results.url
+    if (results.browser) {
+      results.browser.close()
+    }
     return analyze(endUrl, results.body, options.returnSource)
   })
   .then(res =>
