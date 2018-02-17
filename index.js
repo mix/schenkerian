@@ -29,10 +29,10 @@ module.exports = function _export(options) {
     return analyze(url, options.body, options.returnSource)
   }
 
-  return requestAndSendToAnalyze(url, options)
+  return requestAndAnalyze(url, options)
 }
 
-function requestAndSendToAnalyze(url, options) {
+function requestAndAnalyze(url, options) {
   let requestOptions = _.merge({
     url
   }, _.pick(options, [
@@ -42,6 +42,7 @@ function requestAndSendToAnalyze(url, options) {
     'jar',
     'cookies'
   ]))
+
   if (options.agent) {
     requestOptions.agentClass = options.agent.agentClass
     requestOptions.agentOptions = {
@@ -78,13 +79,9 @@ function requestAndSendToAnalyze(url, options) {
   }
 
   let endUrl
-  let promise
-  if (options.phantom) {
-    promise = renderPagePhantom(url, _.defaults(requestOptions, defaultReqOptions))
-  } else {
-    promise = renderPageChrome(url, _.defaults(requestOptions, defaultReqOptions))
-  }
-  return promise
+  const renderHandler = (options.phantom) ? renderPagePhantom : renderPageChrome
+
+  return renderHandler(url, _.defaults(requestOptions, defaultReqOptions))
   .catch(err => {
     if (options.fallbackRequest) {
       return requestPage(_.merge({url: url}, options))
@@ -93,9 +90,6 @@ function requestAndSendToAnalyze(url, options) {
   })
   .then(results => {
     endUrl = results.url
-    if (results.browser) {
-      results.browser.close()
-    }
     return analyze(endUrl, results.body, options.returnSource)
   })
   .then(res =>
