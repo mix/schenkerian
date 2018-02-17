@@ -16,87 +16,82 @@ const defaultReqOptions = {
   userAgent: 'Schenkerianbot/1.0 (+https://github.com/mix/schenkerian)'
 }
 
-module.exports = function _export(options) {
-  let url = options.url
-  if (options.tokens) {
+module.exports = function (options) {
+  const { url, tokens, body } = options
+  if (tokens) {
     _.merge(options, {
-      jar: cookie.jar(options.tokens, url),
-      cookies: cookie.chromeCookies(options.tokens, url)
+      jar: cookie.jar(tokens, url),
+      cookies: cookie.chromeCookies(tokens, url)
     })
   }
 
-  if (options.body) {
-    return analyze(url, options.body, options.returnSource)
+  if (body) {
+    return analyze(options)
   }
 
-  return requestAndAnalyze(url, options)
+  return retrieveContent(url, options)
 }
 
-function requestAndAnalyze(url, options) {
-  let requestOptions = _.merge({
-    url
-  }, _.pick(options, [
-    'timeout',
-    'userAgent',
-    'fallbackRequest',
-    'jar',
-    'cookies'
-  ]))
+function retrieveContent(url, options) {
+  const { forceRequest, agent } = options
+  let requestOptions = _.defaults(
+    _.pick(options, ['url', 'timeout', 'userAgent', 'jar', 'cookies']),
+    defaultReqOptions
+  )
 
-  if (options.agent) {
-    requestOptions.agentClass = options.agent.agentClass
-    requestOptions.agentOptions = {
-      socksHost: options.agent.socksHost,
-      socksPort: options.agent.socksPort
-    }
-  }
-
-  if (isMedia(url)) {
-    return requestPage(_.merge({
-      url
-    }, _.defaults(requestOptions, defaultReqOptions)))
-    .then(results => {
-      return {
-        url: results.url,
-        title: url,
-        image: url
+  if (agent) {
+    const { agentClass, socksHost, socksPort } = agent
+    _.merge(requestOptions, {
+      agentClass,
+      agentOptions: {
+        socksHost,
+        socksPort
       }
     })
   }
 
-  if (options.forceRequest) {
+  if (isMedia(url) || forceRequest) {
     return requestPage(_.merge({
       url
-    }, _.defaults(requestOptions, defaultReqOptions)))
+    }, requestOptions))
     .then(results => {
-      return {
-        url: results.url,
+      // Media content can't be analyzed
+      // It does not contain html to be processed so just return the source
+      // Treat forceRequest flags the same way
+      return _.merge({
         title: url,
         image: url,
         source: results.body
-      }
+      }, _.pick(results, ['url']))
     })
   }
 
-  let endUrl
-  const renderHandler = (options.phantom) ? renderPagePhantom : renderPageChrome
+  return renderAndAnalyze(url, options, requestOptions)
+}
 
-  return renderHandler(url, _.defaults(requestOptions, defaultReqOptions))
+function renderAndAnalyze(url, options, requestOptions) {
+  const { fallbackRequest, phantom, returnSource } = options
+  const renderHandler = (phantom) ? renderPagePhantom : renderPageChrome
+
+  return renderHandler(url, requestOptions)
   .catch(err => {
-    if (options.fallbackRequest) {
-      return requestPage(_.merge({url: url}, options))
+    if (fallbackRequest) {
+      return requestPage(_.merge({
+        url
+      }, requestOptions))
     }
     throw err
   })
   .then(results => {
-    endUrl = results.url
-    return analyze(endUrl, results.body, options.returnSource)
+    return analyze(_.merge({
+      returnSource
+    }, results))
+    .then(res =>
+      _.merge({
+        url: results.url
+      }, res)
+    )
   })
-  .then(res =>
-    _.merge({
-      url: endUrl
-    }, res)
-  )
 }
 
 function isMedia(url) {
