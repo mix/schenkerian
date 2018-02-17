@@ -1,3 +1,4 @@
+[![CircleCI](https://circleci.com/gh/mix/schenkerian.svg?style=svg)](https://circleci.com/gh/mix/schenkerian)
 [![Code Climate](https://codeclimate.com/repos/561d4f47e30ba05237000817/badges/5647015a9134d2527d3b/gpa.svg)](https://codeclimate.com/repos/561d4f47e30ba05237000817/feed)
 
 ## HTML Schenkerian analyzer
