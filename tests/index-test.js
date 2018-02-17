@@ -182,7 +182,7 @@ describe('schenkerian', function () {
     it('rejects when an 404 error occurs', function () {
       return expect(subject({
         url: 'https://google.com/404'
-      })).to.be.rejectedWith('Failed to get acceptable response for https://google.com/404')
+      })).to.be.rejectedWith('Failed to get acceptable response')
     })
 
     it('rejects no head element exists', function () {
