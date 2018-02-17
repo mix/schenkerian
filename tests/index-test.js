@@ -1,5 +1,6 @@
 const proxy = require('proxyquire')
 const http = require('http')
+const Promise = require('bluebird')
 
 describe('The analyzer', function () {
   let subject
@@ -43,7 +44,7 @@ describe('The analyzer', function () {
       url: 'http://mix.com'
     })
     .then(function (response) {
-      expect(response.url).to.equal('http://mix.com')
+      expect(response.url).to.equal('https://mix.com/')
       expect(response.title).to.equal('Discover, collect, and share the best of the web')
       expect(response.description).to.equal('Connecting the curious & creative.')
       expect(response.image).to.exist
@@ -163,7 +164,7 @@ describe('The analyzer', function () {
   it('404 error causes a rejection', function () {
     return expect(subject({
       url: 'https://google.com/404'
-    })).to.be.rejectedWith('[ERROR] Received non-success status[404]')
+    })).to.be.rejectedWith('Failed to get acceptable response for https://google.com/404')
   })
 
   it('rejects no head element exists', function () {
@@ -184,10 +185,16 @@ describe('The analyzer', function () {
     return expect(subject({
       url: 'http://mix.com',
       timeout: 1
-    })).to.be.rejectedWith('1ms retrieving url')
+    })).to.be.rejectedWith('Navigation Timeout Exceeded: 1ms exceeded')
   })
 
-  it('loads the webpage via request if phantom fails', function () {
+  it('loads the webpage via request if chrome fails', function () {
+    subject = proxy('../', {
+      './lib/render-chrome': function () {
+        return Promise.reject('Failed to render-chrome for test')
+      }
+    })
+
     return subject({
       url: 'http://mix.com',
       timeout: 1000,
