@@ -17,16 +17,16 @@ const defaultReqOptions = {
 }
 
 module.exports = function (options) {
-  const { url, tokens, body } = options
+  const { url, tokens, body, returnSource } = options
   if (tokens) {
     _.merge(options, {
-      jar: cookie.jar(tokens, url),
+      jar: cookie.jarForRequest(tokens, url),
       cookies: cookie.chromeCookies(tokens, url)
     })
   }
 
   if (body) {
-    return analyze(options)
+    return analyze(url, body, returnSource)
   }
 
   return retrieveContent(url, options)
@@ -58,11 +58,12 @@ function retrieveContent(url, options) {
       // Media content can't be analyzed
       // It does not contain html to be processed so just return the source
       // Treat forceRequest flags the same way
-      return _.merge({
+      return {
         title: url,
         image: url,
-        source: results.body
-      }, _.pick(results, ['url']))
+        source: results.body,
+        url: results.url
+      }
     })
   }
 
@@ -71,7 +72,7 @@ function retrieveContent(url, options) {
 
 function renderAndAnalyze(url, options, requestOptions) {
   const { fallbackRequest, phantom, returnSource } = options
-  const renderHandler = (phantom) ? renderPagePhantom : renderPageChrome
+  const renderHandler = phantom ? renderPagePhantom : renderPageChrome
 
   return renderHandler(url, requestOptions)
   .catch(err => {
@@ -83,9 +84,7 @@ function renderAndAnalyze(url, options, requestOptions) {
     throw err
   })
   .then(results => {
-    return analyze(_.merge({
-      returnSource
-    }, results))
+    return analyze(results.url, results.body, returnSource)
     .then(res =>
       _.merge({
         url: results.url
