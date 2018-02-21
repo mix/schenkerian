@@ -1,41 +1,11 @@
 const proxy = require('proxyquire')
 const http = require('http')
+const Promise = require('bluebird')
 
-describe('The analyzer', function () {
+describe('schenkerian', function () {
   let subject
   beforeEach(function () {
     subject = require('../')
-  })
-
-  it('be rejected when parsing with cheerio fails on a webpage', function () {
-    let loadStub = sinon.stub()
-    loadStub['@global'] = true
-    subject = proxy('../', {
-      'cheerio': loadStub
-    })
-
-    loadStub.throws(new Error('Some Error'))
-    return expect(subject({
-      url: 'http://mix.com'
-    })).to.be.rejectedWith('Some Error')
-  })
-
-  it('be rejected when cornet fails on a webpage', function () {
-    let loadStub = sinon.stub()
-    let cornetStub = function Cornet() {
-      return {
-        remove: loadStub
-      }
-    }
-    cornetStub['@global'] = true
-    subject = proxy('../', {
-      'cornet': cornetStub
-    })
-
-    loadStub.throws(new Error('Some Error'))
-    return expect(subject({
-      url: 'http://mix.com'
-    })).to.be.rejectedWith('Some Error')
   })
 
   it('retrieves analyzed content for a webpage', function () {
@@ -43,7 +13,7 @@ describe('The analyzer', function () {
       url: 'http://mix.com'
     })
     .then(function (response) {
-      expect(response.url).to.equal('http://mix.com')
+      expect(response.url).to.equal('https://mix.com/')
       expect(response.title).to.equal('Discover, collect, and share the best of the web')
       expect(response.description).to.equal('Connecting the curious & creative.')
       expect(response.image).to.exist
@@ -160,41 +130,97 @@ describe('The analyzer', function () {
     })
   })
 
-  it('404 error causes a rejection', function () {
-    return expect(subject({
-      url: 'https://google.com/404'
-    })).to.be.rejectedWith('[ERROR] Received non-success status[404]')
-  })
+  context('failure scenarios', function () {
+    it('loads the webpage via request if chrome fails', function () {
+      subject = proxy('../', {
+        './lib/render-chrome': function () {
+          return Promise.reject('Failed to render-chrome for test')
+        }
+      })
 
-  it('rejects no head element exists', function () {
-    return expect(subject({
-      url: 'http://mix.com',
-      body: '<html><title>something fun</title></html>'
-    })).to.be.rejectedWith('Timed out trying to get head element')
-  })
-
-  it('rejects no body element exists', function () {
-    return expect(subject({
-      url: 'http://mix.com',
-      body: '<html><head></head><title>something fun</title></head></html>'
-    })).to.be.rejectedWith('Timed out trying to get body element')
-  })
-
-  it('rejects when the page times out', function () {
-    return expect(subject({
-      url: 'http://mix.com',
-      timeout: 1
-    })).to.be.rejectedWith('1ms retrieving url')
-  })
-
-  it('loads the webpage via request if phantom fails', function () {
-    return subject({
-      url: 'http://mix.com',
-      timeout: 1000,
-      fallbackRequest: true
+      return subject({
+        url: 'http://mix.com',
+        timeout: 1000,
+        fallbackRequest: true
+      })
+      .then(function (response) {
+        expect(response.title).to.equal('Discover, collect, and share the best of the web')
+      })
     })
-    .then(function (response) {
-      expect(response.title).to.equal('Discover, collect, and share the best of the web')
+
+    it('rejects when parsing with cheerio fails on a webpage', function () {
+      let loadStub = sinon.stub()
+      loadStub['@global'] = true
+      subject = proxy('../', {
+        'cheerio': loadStub
+      })
+
+      loadStub.throws(new Error('Some Error'))
+      return expect(subject({
+        url: 'http://mix.com'
+      })).to.be.rejectedWith('Some Error')
+    })
+
+    it('rejects when cornet fails on a webpage', function () {
+      let loadStub = sinon.stub()
+      let cornetStub = function Cornet() {
+        return {
+          remove: loadStub
+        }
+      }
+      cornetStub['@global'] = true
+      subject = proxy('../', {
+        'cornet': cornetStub
+      })
+
+      loadStub.throws(new Error('Some Error'))
+      return expect(subject({
+        url: 'http://mix.com'
+      })).to.be.rejectedWith('Some Error')
+    })
+
+    it('rejects when an 404 error occurs', function () {
+      return expect(subject({
+        url: 'https://google.com/404'
+      })).to.be.rejectedWith('Failed to get acceptable response')
+    })
+
+    it('rejects no head element exists', function () {
+      return expect(subject({
+        url: 'http://mix.com',
+        body: '<html><title>something fun</title></html>'
+      })).to.be.rejectedWith('Timed out trying to get head element')
+    })
+
+    it('rejects no body element exists', function () {
+      return expect(subject({
+        url: 'http://mix.com',
+        body: '<html><head></head><title>something fun</title></head></html>'
+      })).to.be.rejectedWith('Timed out trying to get body element')
+    })
+
+    it('rejects when the page times out', function () {
+      return expect(subject({
+        url: 'http://mix.com',
+        timeout: 1
+      })).to.be.rejectedWith('Navigation Timeout Exceeded: 1ms exceeded')
+    })
+  })
+
+  context('flagged to use phantom', function () {
+    it('retrieves analyzed content for a webpage', function () {
+      return subject({
+        url: 'http://mix.com',
+        phantom: true
+      })
+      .then(function (response) {
+        expect(response.url).to.equal('http://mix.com')
+        expect(response.title).to.equal('Discover, collect, and share the best of the web')
+        expect(response.description).to.equal('Connecting the curious & creative.')
+        expect(response.image).to.exist
+        expect(response.amphtml).to.not.exist
+        expect(response.canonical).to.not.exist
+      })
     })
   })
 })

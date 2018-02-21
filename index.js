@@ -1,8 +1,9 @@
 const _ = require('lodash')
 const Url = require('url')
 const requestPage = require('./lib/request')
-const renderPage = require('./lib/render')
-const cookieJar = require('./lib/cookie')
+const renderPagePhantom = require('./lib/render-phantom')
+const renderPageChrome = require('./lib/render-chrome')
+const cookie = require('./lib/cookie')
 const analyze = require('./lib/analyze')
 
 const imageExtensions = ['gif', 'png', 'svg', 'ico', 'jpg', 'jpeg']
@@ -15,76 +16,97 @@ const defaultReqOptions = {
   userAgent: 'Schenkerianbot/1.0 (+https://github.com/mix/schenkerian)'
 }
 
-module.exports = function _export(options) {
-  let url = options.url
-  if (options.body) {
-    return analyze(url, options.body, options.returnSource)
-  } else {
-    if (options.tokens) _.merge(options, {jar: cookieJar(options.tokens, url)})
-    return requestAndSendToAnalyze(url, options)
+/**
+ * schenkerian scrapes and analyzes urls
+ * Acceptable options:
+ *   - url: a string with full protocol and domain
+ *   - body (optional): html text
+ *   - tokens (optional): map of name, values for use in cookies
+ *   - returnSource (optional): includes boilerplate free html in result
+ *   - phantom (optional): use phantomjs (deprecated) instead of Google Chrome
+ *   - agent (optional):
+ *     - agentClass: for use by the request library
+ *     - socksHost: socks proxy host
+ *     - socksPort: socks proxy port
+ *
+ * @param options
+ * @returns {*}
+ */
+module.exports = function (options) {
+  const { url, tokens, body, returnSource } = options
+  if (tokens) {
+    _.merge(options, {
+      jar: cookie.jarForRequest(tokens, url),
+      cookies: cookie.chromeCookies(tokens, url)
+    })
   }
+
+  if (body) {
+    return analyze(url, body, returnSource)
+  }
+
+  return retrieveContent(url, options)
 }
 
-function requestAndSendToAnalyze(url, options) {
-  let requestOptions = {
-    url: url,
-    timeout: options.timeout,
-    userAgent: options.userAgent,
-    fallbackRequest: options.fallbackRequest,
-    jar: options.jar
-  }
-  if (options.agent) {
-    requestOptions.agentClass = options.agent.agentClass
-    requestOptions.agentOptions = {
-      socksHost: options.agent.socksHost,
-      socksPort: options.agent.socksPort
-    }
-  }
+function retrieveContent(url, options) {
+  const { forceRequest, agent } = options
+  let requestOptions = _.defaults(
+    _.pick(options, ['url', 'timeout', 'userAgent', 'jar', 'cookies']),
+    defaultReqOptions
+  )
 
-  if (isMedia(url)) {
-    return requestPage(_.merge({
-      url
-    }, _.defaults(requestOptions, defaultReqOptions)))
-    .then(results => {
-      return {
-        url: results.url,
-        title: url,
-        image: url
+  if (agent) {
+    const { agentClass, socksHost, socksPort } = agent
+    _.merge(requestOptions, {
+      agentClass,
+      agentOptions: {
+        socksHost,
+        socksPort
       }
     })
   }
 
-  if (options.forceRequest) {
+  if (isMedia(url) || forceRequest) {
     return requestPage(_.merge({
       url
-    }, _.defaults(requestOptions, defaultReqOptions)))
+    }, requestOptions))
     .then(results => {
+      // Media content can't be analyzed
+      // It does not contain html to be processed so just return the source
+      // Treat forceRequest flags the same way
       return {
-        url: results.url,
         title: url,
         image: url,
-        source: results.body
+        source: results.body,
+        url: results.url
       }
     })
   }
 
-  let endUrl
-  return renderPage(url, _.defaults(requestOptions, defaultReqOptions))
+  return renderAndAnalyze(url, options, requestOptions)
+}
+
+function renderAndAnalyze(url, options, requestOptions) {
+  const { fallbackRequest, phantom, returnSource } = options
+  const renderHandler = phantom ? renderPagePhantom : renderPageChrome
+
+  return renderHandler(url, requestOptions)
   .catch(err => {
-    if (options.fallbackRequest) {
-      return requestPage(_.merge({url: url}, options))
+    if (fallbackRequest) {
+      return requestPage(_.merge({
+        url
+      }, requestOptions))
     }
     throw err
   })
   .then(results => {
-    endUrl = results.url
-    return analyze(endUrl, results.body, options.returnSource)
+    return analyze(results.url, results.body, returnSource)
+    .then(res =>
+      _.merge({
+        url: results.url
+      }, res)
+    )
   })
-  .then(res =>
-    _.merge({
-      url: endUrl
-    }, res)
-  )
 }
 
 function isMedia(url) {
