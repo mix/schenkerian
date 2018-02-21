@@ -23,6 +23,7 @@ const defaultReqOptions = {
  *   - body (optional): html text
  *   - tokens (optional): map of name, values for use in cookies
  *   - returnSource (optional): includes boilerplate free html in result
+ *   - phantom (optional): use phantomjs (deprecated) instead of Google Chrome
  *   - agent (optional):
  *     - agentClass: for use by the request library
  *     - socksHost: socks proxy host
