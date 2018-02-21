@@ -16,6 +16,21 @@ const defaultReqOptions = {
   userAgent: 'Schenkerianbot/1.0 (+https://github.com/mix/schenkerian)'
 }
 
+/**
+ * schenkerian scrapes and analyzes urls
+ * Acceptable options:
+ *   - url: a string with full protocol and domain
+ *   - body (optional): html text
+ *   - tokens (optional): map of name, values for use in cookies
+ *   - returnSource (optional): includes boilerplate free html in result
+ *   - agent (optional):
+ *     - agentClass: for use by the request library
+ *     - socksHost: socks proxy host
+ *     - socksPort: socks proxy port
+ *
+ * @param options
+ * @returns {*}
+ */
 module.exports = function (options) {
   const { url, tokens, body, returnSource } = options
   if (tokens) {
