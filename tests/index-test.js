@@ -206,21 +206,4 @@ describe('schenkerian', function () {
       })).to.be.rejectedWith('Navigation Timeout Exceeded: 1ms exceeded')
     })
   })
-
-  context('flagged to use phantom', function () {
-    it('retrieves analyzed content for a webpage', function () {
-      return subject({
-        url: 'http://mix.com',
-        phantom: true
-      })
-      .then(function (response) {
-        expect(response.url).to.equal('http://mix.com')
-        expect(response.title).to.equal('Discover, collect, and share the best of the web')
-        expect(response.description).to.equal('Connecting the curious & creative.')
-        expect(response.image).to.exist
-        expect(response.amphtml).to.not.exist
-        expect(response.canonical).to.not.exist
-      })
-    })
-  })
 })
