@@ -22,8 +22,8 @@
     "htmlparser2": "^3.8.2",
     "lodash": "^4.17.5",
     "natural": "^0.5.4",
-    "phantomjs-prebuilt": "^2.1.14",
     "puppeteer": "^1.0.0",
+    "request": "^2.83.0",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {

@@ -1,7 +1,6 @@
 const _ = require('lodash')
 const Url = require('url')
 const requestPage = require('./lib/request')
-const renderPagePhantom = require('./lib/render-phantom')
 const renderPageChrome = require('./lib/render-chrome')
 const cookie = require('./lib/cookie')
 const analyze = require('./lib/analyze')
@@ -23,7 +22,6 @@ const defaultReqOptions = {
  *   - body (optional): html text
  *   - tokens (optional): map of name, values for use in cookies
  *   - returnSource (optional): includes boilerplate free html in result
- *   - phantom (optional): use phantomjs (deprecated) instead of Google Chrome
  *   - agent (optional):
  *     - agentClass: for use by the request library
  *     - socksHost: socks proxy host
@@ -87,10 +85,8 @@ function retrieveContent(url, options) {
 }
 
 function renderAndAnalyze(url, options, requestOptions) {
-  const { fallbackRequest, phantom, returnSource } = options
-  const renderHandler = phantom ? renderPagePhantom : renderPageChrome
-
-  return renderHandler(url, requestOptions)
+  const { fallbackRequest, returnSource } = options
+  return renderPageChrome(url, requestOptions)
   .catch(err => {
     if (fallbackRequest) {
       return requestPage(_.merge({
