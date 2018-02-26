@@ -115,7 +115,7 @@ describe('schenkerian', function () {
   })
 
   it('returns data for a valid image url', function () {
-    let url = 'https://blogs.scientificamerican.com/blogs/cache/file/D37C6F64-E11B-413B-B4B9D36CF0D7C877.jpg?' +
+    let url = 'https://static.scientificamerican.com/blogs/cache/file/D37C6F64-E11B-413B-B4B9D36CF0D7C877.jpg?' +
       'w=590&h=393&77AB39F8-5374-4AE4-93396577281B788A'
     return subject({
       url: url
