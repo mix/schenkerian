@@ -1,6 +1,8 @@
 const proxy = require('proxyquire')
 const http = require('http')
 const Promise = require('bluebird')
+const MIXCOM_TITLE = 'Curate the best of the internet'
+const MIXCOM_DESCRIPTION = 'You can save anything from anywhere. Mix learns what you love to show you even more.'
 
 describe('schenkerian', function () {
   let subject
@@ -14,8 +16,8 @@ describe('schenkerian', function () {
     })
     .then(function (response) {
       expect(response.url).to.equal('https://mix.com/')
-      expect(response.title).to.equal('Discover, collect, and share the best of the web')
-      expect(response.description).to.equal('Connecting the curious & creative.')
+      expect(response.title).to.equal(MIXCOM_TITLE)
+      expect(response.description).to.equal(MIXCOM_DESCRIPTION)
       expect(response.image).to.exist
       expect(response.amphtml).to.not.exist
       expect(response.canonical).to.not.exist
@@ -58,7 +60,7 @@ describe('schenkerian', function () {
       }
     })
     .then(function (response) {
-      return expect(response.title).to.equal('Discover, collect, and share the best of the web')
+      return expect(response.title).to.equal(MIXCOM_TITLE)
     })
   })
 
@@ -108,7 +110,7 @@ describe('schenkerian', function () {
       returnSource: true
     })
     .then(function (response) {
-      expect(response.title).to.equal('Discover, collect, and share the best of the web')
+      expect(response.title).to.equal(MIXCOM_TITLE)
       expect(response.source).to.exist
       expect(response.source).to.contain('Mix')
     })
@@ -144,7 +146,7 @@ describe('schenkerian', function () {
         fallbackRequest: true
       })
       .then(function (response) {
-        expect(response.title).to.equal('Discover, collect, and share the best of the web')
+        expect(response.title).to.equal(MIXCOM_TITLE)
       })
     })
 
