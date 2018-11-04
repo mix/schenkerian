@@ -43,12 +43,12 @@ describe('schenkerian', function () {
 
   it('retrieves amphtml and canonical url from url', function () {
     return subject({
-      url: 'https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/?utm_source=buffer',
-      timeout: 15000
+      url: 'http://space.com/36165-therapy-helps-astronauts-sleep.html',
+      timeout: 30 * 1000 // 30 seconds
     })
     .then(function (response) {
-      expect(response.amphtml).to.equal('https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/amp/')
-      expect(response.canonical).to.equal('https://techcrunch.com/2016/09/27/uber-otto-freight-services-2017/')
+      expect(response.amphtml).to.equal('https://amp.space.com/36165-therapy-helps-astronauts-sleep.html')
+      expect(response.canonical).to.equal('https://www.space.com/36165-therapy-helps-astronauts-sleep.html')
     })
   })
 
