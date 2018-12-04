@@ -1,6 +1,6 @@
-var chai = require('chai')
-  , sinonChai = require('sinon-chai')
-  , promised = require('chai-as-promised')
+const chai = require('chai')
+const sinonChai = require('sinon-chai')
+const promised = require('chai-as-promised')
 
 global.expect = chai.expect
 global.noop = function () {
