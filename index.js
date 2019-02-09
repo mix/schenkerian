@@ -8,6 +8,7 @@ const analyze = require('./lib/analyze')
 const imageExtensions = ['gif', 'png', 'svg', 'ico', 'jpg', 'jpeg']
 const musicExtensions = ['mp3', 'wav', 'aiff']
 const videoExtensions = ['avi', 'mpg', 'mpeg', 'mp4']
+const pdfExtensions = ['pdf']
 
 const defaultReqOptions = {
   timeout: 6000,
@@ -80,6 +81,9 @@ function retrieveContent(url, options) {
       }
     })
   }
+  if (isPDF(url)) {
+    return
+  }
 
   return renderAndAnalyze(url, options, requestOptions)
 }
@@ -106,7 +110,12 @@ function renderAndAnalyze(url, options, requestOptions) {
 }
 
 function isMedia(url) {
-  let extension = Url.parse(url).pathname.split('.').pop()
+  const extension = Url.parse(url).pathname.split('.').pop()
   return imageExtensions.includes(extension) || musicExtensions.includes(extension)
     || videoExtensions.includes(extension)
+}
+
+function isPDF(url) {
+  const extension = Url.parse(url).pathname.split('.').pop()
+  return pdfExtensions.includes(extension)
 }
