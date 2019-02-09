@@ -133,11 +133,13 @@ describe('schenkerian', function () {
   })
 
   it('returns data for a valid pdf url', function () {
+    const url = 'http://www.fundacionsgae.org/Lists/FSGAE_SalaPrensa_Recursos/Attachments/1/dummy.pdf'
     return subject({
-      url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+      url
     })
     .then(function (response) {
-      console.log(' PDF!!!!', response)
+      expect(response.url).to.equal(url)
+      expect(response.source).to.contain('mailing list from')
     })
   })
 
