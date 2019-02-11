@@ -1,5 +1,6 @@
 const _ = require('lodash')
 const Url = require('url')
+const pdfParse = require('pdf-parse');
 const requestPage = require('./lib/request')
 const renderPageChrome = require('./lib/render-chrome')
 const cookie = require('./lib/cookie')
@@ -8,6 +9,7 @@ const analyze = require('./lib/analyze')
 const imageExtensions = ['gif', 'png', 'svg', 'ico', 'jpg', 'jpeg']
 const musicExtensions = ['mp3', 'wav', 'aiff']
 const videoExtensions = ['avi', 'mpg', 'mpeg', 'mp4']
+const pdfExtensions = ['pdf']
 
 const defaultReqOptions = {
   timeout: 6000,
@@ -80,6 +82,24 @@ function retrieveContent(url, options) {
       }
     })
   }
+  if (isPDF(url)) {
+    return requestPage(_.merge({
+      url,
+      encoding: null
+    }, requestOptions))
+    .then(results => {
+      return pdfParse(Buffer.from(results.body, 'utf8'))
+      .then(pdfData => {
+        return {
+          title: _.get(pdfData, 'info.Title', url),
+          description: _.get(pdfData, 'info.Subject', url),
+          image: url,
+          source: pdfData.text,
+          url: results.url
+        }
+      })
+    })
+  }
 
   return renderAndAnalyze(url, options, requestOptions)
 }
@@ -106,7 +126,12 @@ function renderAndAnalyze(url, options, requestOptions) {
 }
 
 function isMedia(url) {
-  let extension = Url.parse(url).pathname.split('.').pop()
+  const extension = Url.parse(url).pathname.split('.').pop()
   return imageExtensions.includes(extension) || musicExtensions.includes(extension)
     || videoExtensions.includes(extension)
+}
+
+function isPDF(url) {
+  const extension = Url.parse(url).pathname.split('.').pop()
+  return pdfExtensions.includes(extension)
 }
