@@ -10,12 +10,13 @@ const imageExtensions = ['gif', 'png', 'svg', 'ico', 'jpg', 'jpeg']
 const musicExtensions = ['mp3', 'wav', 'aiff']
 const videoExtensions = ['avi', 'mpg', 'mpeg', 'mp4']
 const pdfExtensions = ['pdf']
-
 const defaultReqOptions = {
   timeout: 6000,
   maxRedirects: 30,
   userAgent: 'Schenkerianbot/1.0 (+https://github.com/mix/schenkerian)'
 }
+
+const RE_SPACES = /\s+/g
 
 /**
  * schenkerian scrapes and analyzes urls
@@ -90,11 +91,15 @@ function retrieveContent(url, options) {
     .then(results => {
       return pdfParse(Buffer.from(results.body, 'utf8'))
       .then(pdfData => {
+        const { text, info } = pdfData
+        const source = text ? text.replace(RE_SPACES, ' ') : ''
+        const title = _.get(info, 'Title', url)
+        const description = _.get(info, 'Subject', url)
         return {
-          title: _.get(pdfData, 'info.Title', url),
-          description: _.get(pdfData, 'info.Subject', url),
+          source,
+          title,
+          description,
           image: url,
-          source: pdfData.text,
           url: results.url
         }
       })
