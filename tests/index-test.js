@@ -47,7 +47,7 @@ describe('schenkerian', function () {
       timeout: 30 * 1000 // 30 seconds
     })
     .then(function (response) {
-      expect(response.amphtml).to.equal('https://amp.space.com/36165-therapy-helps-astronauts-sleep.html')
+      expect(response.amphtml).to.equal('https://www.space.com/amp/36165-therapy-helps-astronauts-sleep.html')
       expect(response.canonical).to.equal('https://www.space.com/36165-therapy-helps-astronauts-sleep.html')
     })
   })
