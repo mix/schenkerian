@@ -13,7 +13,8 @@ const pdfExtensions = ['pdf']
 const defaultReqOptions = {
   timeout: 6000,
   maxRedirects: 30,
-  userAgent: 'Schenkerianbot/1.0 (+https://github.com/mix/schenkerian)'
+  userAgent: 'Schenkerianbot/1.0 (+https://github.com/mix/schenkerian)',
+  ignoreHTTPSErrors: false
 }
 
 const RE_SPACES = /\s+/g
@@ -52,7 +53,7 @@ module.exports = function (options) {
 function retrieveContent(url, options) {
   const { forceRequest, agent } = options
   let requestOptions = _.defaults(
-    _.pick(options, ['url', 'timeout', 'userAgent', 'jar', 'cookies']),
+    _.pick(options, ['url', 'timeout', 'userAgent', 'jar', 'cookies', 'ignoreHTTPSErrors']),
     defaultReqOptions
   )
 

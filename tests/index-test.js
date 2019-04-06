@@ -219,4 +219,14 @@ describe('schenkerian', function () {
       })).to.be.rejectedWith('Navigation Timeout Exceeded: 1ms exceeded')
     })
   })
+
+  it('deals with bad ssl when using ignoreHTTPSErrors', function () {
+    return subject({
+      url: 'https://expired.badssl.com',
+      ignoreHTTPSErrors: true
+    })
+    .then(function (response) {
+      expect(response.url).to.equal('https://expired.badssl.com/')
+    })
+  })
 })
