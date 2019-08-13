@@ -19,7 +19,7 @@
     "cheerio": "^0.22.0",
     "cornet": "git+https://github.com/mix/node-cornet.git",
     "gramophone": "0.0.3",
-    "htmlparser2": "^3.8.2",
+    "htmlparser2": "^4.0.0",
     "lodash": "^4.17.15",
     "natural": "^0.6.2",
     "pdf-parse": "^1.1.1",
