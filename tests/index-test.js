@@ -20,7 +20,7 @@ describe('schenkerian', function () {
       expect(response.description).to.equal(MIXCOM_DESCRIPTION)
       expect(response.image).to.exist
       expect(response.amphtml).to.not.exist
-      expect(response.canonical).to.not.exist
+      expect(response.canonical).to.equal('https://mix.com/')
     })
   })
 
@@ -47,7 +47,7 @@ describe('schenkerian', function () {
       timeout: 30 * 1000 // 30 seconds
     })
     .then(function (response) {
-      expect(response.amphtml).to.equal('https://amp.space.com/36165-therapy-helps-astronauts-sleep.html')
+      expect(response.amphtml).to.equal('https://www.space.com/amp/36165-therapy-helps-astronauts-sleep.html')
       expect(response.canonical).to.equal('https://www.space.com/36165-therapy-helps-astronauts-sleep.html')
     })
   })
@@ -217,6 +217,16 @@ describe('schenkerian', function () {
         url: 'http://mix.com',
         timeout: 1
       })).to.be.rejectedWith('Navigation Timeout Exceeded: 1ms exceeded')
+    })
+  })
+
+  it('deals with bad ssl when using ignoreHTTPSErrors', function () {
+    return subject({
+      url: 'https://expired.badssl.com',
+      ignoreHTTPSErrors: true
+    })
+    .then(function (response) {
+      expect(response.url).to.equal('https://expired.badssl.com/')
     })
   })
 })
