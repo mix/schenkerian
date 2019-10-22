@@ -20,7 +20,7 @@ describe('schenkerian', function () {
       expect(response.description).to.equal(MIXCOM_DESCRIPTION)
       expect(response.image).to.exist
       expect(response.amphtml).to.not.exist
-      expect(response.canonical).to.not.exist
+      expect(response.canonical).to.equal('https://mix.com/')
     })
   })
 
