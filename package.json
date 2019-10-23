@@ -15,7 +15,7 @@
   "author": "Dustin Diaz & Ali Faiz",
   "license": "MIT",
   "dependencies": {
-    "bluebird": "^3.7.0",
+    "bluebird": "^3.7.1",
     "cheerio": "^0.22.0",
     "cornet": "git+https://github.com/mix/node-cornet.git",
     "gramophone": "0.0.3",
