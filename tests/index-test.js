@@ -216,7 +216,7 @@ describe('schenkerian', function () {
       return expect(subject({
         url: 'http://mix.com',
         timeout: 1
-      })).to.be.rejectedWith('Navigation Timeout Exceeded: 1ms exceeded')
+      })).to.be.rejectedWith('Navigation timeout of 1 ms exceeded')
     })
   })
 
