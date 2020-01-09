@@ -143,6 +143,17 @@ describe('schenkerian', function () {
     })
   })
 
+  it('returns correct canonical for content with relative path', function () {
+    const url = 'http://www.nasa.gov/image-feature/houston-texas-on-the-gulf-coast'
+    return subject({
+      url
+    })
+    .then(function (response) {
+      expect(response.url).to.equal('https://www.nasa.gov/image-feature/houston-texas-on-the-gulf-coast/')
+      expect(response.canonical).to.equal('https://www.nasa.gov/image-feature/houston-texas-on-the-gulf-coast')
+    })
+  })
+
   context('failure scenarios', function () {
     it('loads the webpage via request if chrome fails', function () {
       subject = proxy('../', {
