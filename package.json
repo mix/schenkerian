@@ -1,6 +1,6 @@
 {
   "name": "schenkerian",
-  "version": "0.10.4",
+  "version": "0.11.0",
   "description": "a HTML keyword analyzer",
   "main": "index.js",
   "scripts": {
@@ -23,7 +23,7 @@
     "lodash": "^4.17.15",
     "natural": "^0.6.2",
     "pdf-parse": "^1.1.1",
-    "puppeteer": "^2.0.0",
+    "puppeteer": "^2.1.1",
     "request": "^2.88.0",
     "yamljs": "^0.3.0"
   },
