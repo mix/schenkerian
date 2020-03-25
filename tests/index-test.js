@@ -24,6 +24,16 @@ describe('schenkerian', function () {
     })
   })
 
+  it('resolves webpage with hash fragments', function () {
+    return subject({
+      url: 'https://big.dk/#projects-maze'
+    })
+    .then(function (response) {
+      expect(response.url).to.equal('https://big.dk/#projects-maze')
+      expect(response.title).to.equal('BIG | Bjarke Ingels Group')
+    })
+  })
+
   it('retrieves analyzed content with utf8 encoding', function () {
     return subject({
       url: 'https://architizer.com/projects/universite-de-technologie-de-compiegne-utc/',
