@@ -24,9 +24,25 @@ describe('schenkerian', function () {
     })
   })
 
+  it('retrieves analyzed from youtu.be where the title fluctuates', function () {
+    return subject({
+      url: 'https://youtu.be/NjAqVWUaGE0',
+      timeout: 30 * 1000
+    })
+    .then(function (response) {
+      const expectedUrl = 'https://www.youtube.com/watch?v=NjAqVWUaGE0'
+      expect(response.url).to.contain(expectedUrl)
+      expect(response.title).to.equal('Anchorman--Outtakes')
+      expect(response.description).to.equal('')
+      expect(response.image).to.exist
+      expect(response.amphtmlUrl).not.to.exist
+    })
+  })
+
   it('resolves webpage with hash fragments', function () {
     return subject({
-      url: 'https://big.dk/#projects-maze'
+      url: 'https://big.dk/#projects-maze',
+      timeout: 30 * 1000
     })
     .then(function (response) {
       expect(response.url).to.equal('https://big.dk/#projects-maze')
