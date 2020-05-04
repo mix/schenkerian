@@ -4,7 +4,9 @@
   "description": "a HTML keyword analyzer",
   "main": "index.js",
   "scripts": {
-    "test": "make test"
+    "test": "make test",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "keywords": [
     "html",
@@ -25,7 +27,8 @@
     "pdf-parse": "^1.1.1",
     "puppeteer": "^2.1.1",
     "request": "^2.88.0",
-    "yamljs": "^0.3.0"
+    "yamljs": "^0.3.0",
+    "snyk": "^1.317.0"
   },
   "devDependencies": {
     "chai": "^4.0.2",
@@ -46,5 +49,6 @@
   "bugs": {
     "url": "https://github.com/mix/schenkerian/issues"
   },
-  "homepage": "https://github.com/mix/schenkerian#readme"
+  "homepage": "https://github.com/mix/schenkerian#readme",
+  "snyk": true
 }
