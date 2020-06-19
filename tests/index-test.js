@@ -1,8 +1,8 @@
 const proxy = require('proxyquire')
 const http = require('http')
 const Promise = require('bluebird')
-const MIXCOM_TITLE = 'Curate the best of the internet'
-const MIXCOM_DESCRIPTION = 'You can save anything from anywhere. Mix learns what you love to show you even more.'
+const MIXCOM_TITLE = 'Rediscover the Internet'
+const MIXCOM_DESCRIPTION = 'Mix is a new personalized discovery platform that unlocks more of the internet you care about.'
 
 describe('schenkerian', function () {
   let subject
@@ -32,7 +32,7 @@ describe('schenkerian', function () {
     .then(function (response) {
       const expectedUrl = 'https://www.youtube.com/watch?v=NjAqVWUaGE0'
       expect(response.url).to.contain(expectedUrl)
-      expect(response.title).to.equal('Anchorman--Outtakes')
+      expect(response.title).to.contain('Anchorman--Outtakes')
       expect(response.description).to.equal('')
       expect(response.image).to.exist
       expect(response.amphtmlUrl).not.to.exist
