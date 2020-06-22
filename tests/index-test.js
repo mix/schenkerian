@@ -27,7 +27,7 @@ describe('schenkerian', function () {
   it('retrieves analyzed from youtu.be where the title fluctuates', function () {
     return subject({
       url: 'https://youtu.be/NjAqVWUaGE0',
-      timeout: 30 * 1000
+      timeout: 60 * 1000
     })
     .then(function (response) {
       const expectedUrl = 'https://www.youtube.com/watch?v=NjAqVWUaGE0'
