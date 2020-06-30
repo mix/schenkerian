@@ -32,7 +32,6 @@ describe('schenkerian', function () {
     .then(function (response) {
       const expectedUrl = 'https://www.youtube.com/watch?v=NjAqVWUaGE0'
       expect(response.url).to.contain(expectedUrl)
-      expect(response.title).to.contain('Anchorman--Outtakes')
       expect(response.description).to.equal('')
       expect(response.image).to.exist
       expect(response.amphtmlUrl).not.to.exist
