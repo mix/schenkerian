@@ -25,6 +25,10 @@ describe('schenkerian', function () {
   })
 
   it('retrieves analyzed from youtu.be where the title fluctuates', function () {
+    const expectedTitles = [
+      'Anchorman--Outtakes',
+      'Untitled'
+    ]
     return subject({
       url: 'https://youtu.be/NjAqVWUaGE0',
       timeout: 60 * 1000
@@ -32,7 +36,7 @@ describe('schenkerian', function () {
     .then(function (response) {
       const expectedUrl = 'https://www.youtube.com/watch?v=NjAqVWUaGE0'
       expect(response.url).to.contain(expectedUrl)
-      expect(response.title).to.contain('Anchorman--Outtakes')
+      expect(expectedTitles).to.contain(response.title)
       expect(response.description).to.equal('')
       expect(response.image).to.exist
       expect(response.amphtmlUrl).not.to.exist
