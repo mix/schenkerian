@@ -1,8 +1,8 @@
 const proxy = require('proxyquire')
 const http = require('http')
 const Promise = require('bluebird')
-const MIXCOM_TITLE = 'Rediscover the Internet'
-const MIXCOM_DESCRIPTION = 'Mix is a new personalized discovery platform that unlocks more of the internet you care about.'
+const MIXCOM_TITLE = 'Mix'
+const MIXCOM_DESCRIPTION = 'The best content from the open web, personalized.'
 
 describe('schenkerian', function () {
   let subject
