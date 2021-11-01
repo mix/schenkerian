@@ -21,7 +21,7 @@
     "gramophone": "0.0.3",
     "htmlparser2": "^4.0.0",
     "lodash": "^4.17.15",
-    "natural": "^4.0.0",
+    "natural": "^5.1.10",
     "pdf-parse": "^1.1.1",
     "puppeteer": "^8.0.0",
     "request": "^2.88.0",
